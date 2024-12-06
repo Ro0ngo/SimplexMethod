@@ -1,0 +1,8 @@
+*.jar
+*.war
+*.apk
+build/
+.gradle/
+
+.idea/
+*.iml
