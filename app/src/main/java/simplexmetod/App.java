@@ -30,19 +30,21 @@ public class App {
      * @param args йцу
      */
     public static void main(String[] args) {
-        boolean[] basisVector = { false, true, true, true };
+        boolean[] basisVector = { false, false, true, true };
         boolean[] vectorCopy = Arrays.copyOf(basisVector, basisVector.length);
-        Fraction[] targetFunction = {new Fraction(2), new Fraction(0), new Fraction(1), new Fraction(1), new Fraction(3)};
+        Fraction[] targetFunction = {new Fraction(-2), new Fraction(-1), new Fraction(-3), new Fraction(-1), new Fraction(0)};
 
         Matrix matrix = new Matrix(new Fraction[][] {
-                { new Fraction(9, 155), new Fraction(0), new Fraction(0), new Fraction(1), new Fraction(6, 31) },
-                { new Fraction(-42, 155), new Fraction(1), new Fraction(0), new Fraction(0), new Fraction(34, 31) },
-                { new Fraction(194, 155), new Fraction(0), new Fraction(1), new Fraction(0), new Fraction(150, 31) }
+                { new Fraction(1), new Fraction(2), new Fraction(5), new Fraction(-1), new Fraction(4) },
+                { new Fraction(1), new Fraction(-1), new Fraction(-1), new Fraction(2), new Fraction(1) },
         });
 
         matrix.rendererColumn(basisVector);
         matrix.gauss();
         matrix.restoreColumnOrderWithVector();
+        System.out.println();
+        matrix.printMatrix();
+        System.out.println(Arrays.toString(matrix.solution(targetFunction, matrix.isBasicVector(vectorCopy), matrix.isFreeVector(vectorCopy))));
         matrix.addRow(matrix.solution(targetFunction, matrix.isBasicVector(vectorCopy), matrix.isFreeVector(vectorCopy)));
         matrix.removeColumns(matrix.isBasicVector(vectorCopy));
         matrix.printMatrix();
@@ -50,6 +52,8 @@ public class App {
         SimplexMethod table = new SimplexMethod(matrix, targetFunction, matrix.isBasicVector(vectorCopy), matrix.isFreeVector(vectorCopy));
         System.out.println();
         table.simplexMove(1, 0);
+        table.printTable();
+        table.simplexMove(0, 1);
         table.printTable();
     }
 }

@@ -94,8 +94,9 @@ public class SimplexMethod {
         }
 
         Fraction supElement = matrix.getElement(rowIndex, colIndex);
-        supElement = (new Fraction(1)).divide(supElement);
+        supElement = (Fraction.ONE).divide(supElement);
 
+        Fraction[] referenceLine = matrix.getRowFromMatrix(rowIndex);
         matrix.setElement(rowIndex, colIndex, supElement);
 
         // Проход по строке, кроме опорного элемента
@@ -108,11 +109,19 @@ public class SimplexMethod {
         // Проход по столбцу, кроме опорного элемента
         for (int i = 0; i < matrix.getRows(); i++) {
             if (i != rowIndex) {
-                matrix.setElement(i, colIndex, matrix.getElement(i, colIndex).multiply(supElement).multiply(new Fraction(-1)));
+                matrix.setElement(i, colIndex, matrix.getElement(i, colIndex).multiply(supElement).multiply(Fraction.NEGATIVE_ONE));
             }
         }
 
         swapVariables(colIndex, rowIndex);
+
+        for (int i = 0; i < matrix.getRows(); i++) {
+            if (i != rowIndex) {
+                Fraction[] oldLine = matrix.getRowFromMatrix(i);
+                Fraction[] newLine = matrix.addVectors(matrix.multiplyVectorByNumber(referenceLine, matrix.getElement(i, colIndex)), oldLine);
+                matrix.setRowInMatrix(i, newLine, colIndex);
+            }
+        }
 
     }
 
@@ -145,7 +154,7 @@ public class SimplexMethod {
 
         for (int i = 0; i < matrix.getCols() - 1; i++) {
             Fraction value = matrix.getElement(matrix.getRows() - 1, i);
-            if (value.isLessThan(new Fraction(0))) {
+            if (value.isLessThan(Fraction.ZERO)) {
                 negativeIndices.add(i);
             }
         }
@@ -159,7 +168,7 @@ public class SimplexMethod {
     public void printTable() {
         System.out.print("   ");
         for (int i = 0; i < isFreeVariable.toArray().length; i++) {
-            System.out.print("x" + isFreeVariable.get(i));
+            System.out.print("x" + isFreeVariable.get(i) + "\t");
         }
         System.out.print("\n");
 

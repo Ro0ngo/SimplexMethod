@@ -1,9 +1,6 @@
 package simplexmetod;
 
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 // Алгортим: создаётся целевая функция(вектор массива Fraction значений), вместе с копией
 // Создаётся вектор базисных и свободных переменных(boolean значения)
@@ -79,7 +76,7 @@ public class Matrix {
      */
     private boolean isRowDegenerate(int row) {
         for (Fraction element : data[row]) {
-            if (!element.isEqualTo(new Fraction(0))) {
+            if (!element.isEqualTo(Fraction.ZERO)) {
                 return false;
             }
         }
@@ -94,7 +91,7 @@ public class Matrix {
      */
     private boolean isColumnDegenerate(int col) {
         for (int i = 0; i < rows; i++) {
-            if (!data[i][col].isEqualTo(new Fraction(0))) {
+            if (!data[i][col].isEqualTo(Fraction.ZERO)) {
                 return false;
             }
         }
@@ -116,7 +113,7 @@ public class Matrix {
                 }
             }
 
-            if (data[maxRow][i].isEqualTo(new Fraction(0)) || isRowDegenerate(maxRow) || isColumnDegenerate(i)) {
+            if (data[maxRow][i].isEqualTo(Fraction.ZERO) || isRowDegenerate(maxRow) || isColumnDegenerate(i)) {
                 throw new IllegalArgumentException("Матрица содержит вырожденные строки или столбцы.");
             }
 
@@ -181,44 +178,64 @@ public class Matrix {
      * @param isFree         Вектор индексов свободных переменных.
      * @return Возвращает преобразованную целевую функцию(без базисных переменных, на их месте свободные).
      */
+    /**
+     * Преобразует целевую функцию, заменяя базисные переменные на свободные.
+     *
+     * @param targetFunction Целевая функция.
+     * @param isBasic        Вектор индексов базисных переменных.
+     * @param isFree         Вектор индексов свободных переменных.
+     * @return Возвращает преобразованную целевую функцию(без базисных переменных, на их месте свободные).
+     */
     public Fraction[] solution(Fraction[] targetFunction, List<Integer> isBasic, List<Integer> isFree) {
         Fraction[] transformedFunction = new Fraction[targetFunction.length];
-        for (int i = 0; i < transformedFunction.length; i++) {
-            transformedFunction[i] = new Fraction(0);
-        }
+        Arrays.fill(transformedFunction, Fraction.ZERO);
 
-        int lastIndex = targetFunction.length - 1;
-        if (!isFree.contains(lastIndex)) {
-            isFree.add(lastIndex);
-        }
+        List<Integer> freeCopy = new ArrayList<>(isFree);
+        freeCopy.add(targetFunction.length - 1);
 
         for (int j = 0; j < targetFunction.length; j++) {
-            if (isFree.contains(j)) {
-                transformedFunction[j] = transformedFunction[j].add(targetFunction[j].multiply(new Fraction(-1)));
+            if (freeCopy.contains(j)) {
+                transformedFunction[j] = transformedFunction[j].add(targetFunction[j]);
             }
         }
 
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                if (isFree.contains(j)) {
-                    Fraction coefficient = (j == lastIndex) ? new Fraction(-1) : new Fraction(1);
-
-                    for (int k = 0; k < cols; k++) {
-                        if (isBasic.contains(k)) {
-                            transformedFunction[j] = transformedFunction[j].add(
-                                    data[i][j].multiply(data[i][k]).multiply(targetFunction[k].multiply(coefficient))
-                            );
-                        }
-                    }
+        for (int i = 0; i < getRows(); i++) {
+            for (Integer indexCol : isBasic) {
+                if (data[i][indexCol].isEqualTo(Fraction.ONE)) {
+                    Fraction[] updateVector = createUpdateVector(i, indexCol, targetFunction[indexCol]);
+                    transformedFunction = addVectors(transformedFunction, updateVector);
                 }
             }
         }
 
-        for (int i = 0; i < transformedFunction.length; i++) {
-            transformedFunction[i] = transformedFunction[i].multiply(new Fraction(-1));
-        }
+        transformedFunction[transformedFunction.length - 1] =
+                transformedFunction[transformedFunction.length - 1].multiply(Fraction.NEGATIVE_ONE);
 
         return transformedFunction;
+    }
+
+    private Fraction[] createUpdateVector(int row, int indexCol, Fraction coefficient) {
+        Fraction[] vector = getRowFromMatrix(row);
+        vector[indexCol] = Fraction.ZERO;
+        vector = multVectorByNumberExceptLastIndex(vector, Fraction.NEGATIVE_ONE);
+
+        return multiplyVectorByNumber(vector, coefficient);
+    }
+
+
+    /**
+     * Домножает элементы строки матрицы, кроме последнего, на дробь(число)
+     * @param vector Вектор строки матрицы
+     * @param number Число на которое надо домножить
+     * @return Изменённый вектор
+     */
+    private Fraction[] multVectorByNumberExceptLastIndex(Fraction[] vector, Fraction number) {
+
+        for (int i = 0; i < vector.length - 1; i++) {
+            vector[i] = vector[i].multiply(number);
+        }
+
+        return vector;
     }
 
 
@@ -230,7 +247,7 @@ public class Matrix {
      */
     public void backwardSubstitution() {
         for (int i = Math.min(rows, cols) - 1; i >= 0; i--) {
-            if (data[i][i].isEqualTo(new Fraction(0))) {
+            if (data[i][i].isEqualTo(Fraction.ZERO)) {
                 throw new IllegalArgumentException("Матрица содержит нулевой элемент на главной диагонали.");
             }
 
@@ -408,19 +425,19 @@ public class Matrix {
             for (int j = 0; j < cols - 1; j++) {
                 Fraction coefficient = data[i][j];
 
-                if (!coefficient.isEqualTo(new Fraction(0))) {
+                if (!coefficient.isEqualTo(Fraction.ZERO)) {
                     hasNonZeroCoefficient = true;
 
-                    if (!equation.isEmpty() && coefficient.isGreaterThan(new Fraction(0))) {
+                    if (!equation.isEmpty() && coefficient.isGreaterThan(Fraction.ZERO)) {
                         equation.append(" + ");
-                    } else if (coefficient.isLessThan(new Fraction(0))) {
+                    } else if (coefficient.isLessThan(Fraction.ZERO)) {
                         equation.append(" - ");
-                        coefficient = coefficient.multiply(new Fraction(-1));
+                        coefficient = coefficient.multiply(Fraction.NEGATIVE_ONE);
                     }
 
-                    if (coefficient.isEqualTo(new Fraction(1))) {
+                    if (coefficient.isEqualTo(Fraction.ONE)) {
                         equation.append("x").append(columnOrder[j]);
-                    } else if (coefficient.isEqualTo(new Fraction(-1))) {
+                    } else if (coefficient.isEqualTo(Fraction.NEGATIVE_ONE)) {
                         equation.append("-x").append(columnOrder[j]);
                     } else {
                         if (coefficient.getDenominator() == 1) {
@@ -528,7 +545,7 @@ public class Matrix {
      */
     public Fraction[] getRowFromMatrix(int rowIndex) {
         if (rowIndex < 0 || rowIndex >= rows) {
-            throw new IndexOutOfBoundsException("Индекс строки вне допустимого диапазона.");
+            throw new IndexOutOfBoundsException("Id строки вне допустимого диапазона.");
         }
 
         Fraction[] row = new Fraction[cols];
@@ -558,14 +575,15 @@ public class Matrix {
     }
 
     /**
-     * Изменение текущей строки двумерного тензора.
+     * Замена текущей строки двумерного тензора для симплекс-хода
      *
      * @param rowIndex Id строки.
      * @param newRow   Новая строка.
+     * @param colIndex Id опорного столбца(сам по себе в ходе симлекс-метода этот элемент изменяется)
      * @throws IndexOutOfBoundsException Id за пределами размеров матрицы.
      * @throws IllegalArgumentException  Неверная длина новой стоки
      */
-    public void setRowInMatrix(int rowIndex, Fraction[] newRow) {
+    public void setRowInMatrix(int rowIndex, Fraction[] newRow, int colIndex) {
         if (rowIndex < 0 || rowIndex >= rows) {
             throw new IndexOutOfBoundsException("Id строки вне допустимого диапазона.");
         }
@@ -574,7 +592,8 @@ public class Matrix {
         }
 
         for (int col = 0; col < cols; col++) {
-            setElement(rowIndex, col, newRow[col]);
+            if (col != colIndex)
+                setElement(rowIndex, col, newRow[col]);
         }
     }
 
