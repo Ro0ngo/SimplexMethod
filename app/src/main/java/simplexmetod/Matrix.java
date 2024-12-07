@@ -178,14 +178,6 @@ public class Matrix {
      * @param isFree         Вектор индексов свободных переменных.
      * @return Возвращает преобразованную целевую функцию(без базисных переменных, на их месте свободные).
      */
-    /**
-     * Преобразует целевую функцию, заменяя базисные переменные на свободные.
-     *
-     * @param targetFunction Целевая функция.
-     * @param isBasic        Вектор индексов базисных переменных.
-     * @param isFree         Вектор индексов свободных переменных.
-     * @return Возвращает преобразованную целевую функцию(без базисных переменных, на их месте свободные).
-     */
     public Fraction[] solution(Fraction[] targetFunction, List<Integer> isBasic, List<Integer> isFree) {
         Fraction[] transformedFunction = new Fraction[targetFunction.length];
         Arrays.fill(transformedFunction, Fraction.ZERO);
@@ -214,30 +206,30 @@ public class Matrix {
         return transformedFunction;
     }
 
+
     private Fraction[] createUpdateVector(int row, int indexCol, Fraction coefficient) {
         Fraction[] vector = getRowFromMatrix(row);
         vector[indexCol] = Fraction.ZERO;
-        vector = multVectorByNumberExceptLastIndex(vector, Fraction.NEGATIVE_ONE);
+        vector = multVectorByNumberExceptLastIndex(vector);
 
         return multiplyVectorByNumber(vector, coefficient);
     }
 
 
     /**
-     * Домножает элементы строки матрицы, кроме последнего, на дробь(число)
-     * @param vector Вектор строки матрицы
-     * @param number Число на которое надо домножить
-     * @return Изменённый вектор
+     * Домножает элементы строки матрицы, кроме последнего, на -1.
+     *
+     * @param vector Вектор строки матрицы.
+     * @return Вектор значений переменных, перенесённых на другую сторону знака =.
      */
-    private Fraction[] multVectorByNumberExceptLastIndex(Fraction[] vector, Fraction number) {
+    private Fraction[] multVectorByNumberExceptLastIndex(Fraction[] vector) {
 
         for (int i = 0; i < vector.length - 1; i++) {
-            vector[i] = vector[i].multiply(number);
+            vector[i] = vector[i].multiply(Fraction.NEGATIVE_ONE);
         }
 
         return vector;
     }
-
 
     /**
      * Применяет обратный ход метода Гаусса для приведения матрицы к диагональному виду.
@@ -594,6 +586,28 @@ public class Matrix {
         for (int col = 0; col < cols; col++) {
             if (col != colIndex)
                 setElement(rowIndex, col, newRow[col]);
+        }
+    }
+
+
+    /**
+     * Замена текущей строки двумерного тензора для симплекс-хода
+     *
+     * @param rowIndex Id строки.
+     * @param newRow   Новая строка.
+     * @throws IndexOutOfBoundsException Id за пределами размеров матрицы.
+     * @throws IllegalArgumentException  Неверная длина новой стоки
+     */
+    public void setRowInMatrix(int rowIndex, Fraction[] newRow) {
+        if (rowIndex < 0 || rowIndex >= rows) {
+            throw new IndexOutOfBoundsException("Id строки вне допустимого диапазона.");
+        }
+        if (newRow.length != cols) {
+            throw new IllegalArgumentException("Длина новой строки должна совпадать с количеством столбцов в матрице.");
+        }
+
+        for (int col = 0; col < cols; col++) {
+            setElement(rowIndex, col, newRow[col]);
         }
     }
 

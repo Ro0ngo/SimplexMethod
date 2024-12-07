@@ -51,9 +51,29 @@ public class App {
 
         SimplexMethod table = new SimplexMethod(matrix, targetFunction, matrix.isBasicVector(vectorCopy), matrix.isFreeVector(vectorCopy));
         System.out.println();
-        table.simplexMove(1, 0);
+
+
+        if (table.getNegativeVariableIndices().isEmpty()){
+            System.out.println(matrix.getElement(matrix.getRows(), matrix.getCols()).multiply(Fraction.NEGATIVE_ONE));
+            return;
+        }
+
+        table.simplexMove(1, 0, table.getNegativeVariableIndices());
+
+        if (table.getNegativeVariableIndices().isEmpty()){
+            table.printAnswer();
+            return;
+        }
+
         table.printTable();
-        table.simplexMove(0, 1);
+        table.simplexMove(0, 1, table.getNegativeVariableIndices());
+
+        table.printTable();
+        if (table.getNegativeVariableIndices().isEmpty()){
+            table.printAnswer();
+            return;
+        }
+
         table.printTable();
     }
 }

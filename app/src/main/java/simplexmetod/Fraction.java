@@ -7,9 +7,19 @@ import java.math.BigDecimal;
  */
 public class Fraction {
 
+    /**
+     * Дробь со значением 0/1.
+     */
     public static final Fraction ZERO = new Fraction(0);
+    /**
+     * Дробь со значением 1/1.
+     */
     public static final Fraction ONE = new Fraction(1);
+    /**
+     * Дробь со значением -1/1.
+     */
     public static final Fraction NEGATIVE_ONE = new Fraction(-1);
+
     private int numerator;   // Числитель
     private int denominator;
 
@@ -90,6 +100,13 @@ public class Fraction {
             numerator = -numerator;
             denominator = -denominator;
         }
+    }
+
+    public static Fraction max(Fraction f1, Fraction f2) {
+        if (f1 == null || f2 == null) {
+            throw new IllegalArgumentException("Дроби не могут быть null.");
+        }
+        return f1.isGreaterThan(f2) ? f1 : f2;
     }
 
     /**
@@ -261,7 +278,7 @@ public class Fraction {
     public static Fraction fromString(String fractionStr) {
         String[] parts = fractionStr.split("/");
         if (parts.length != 2) {
-            throw new IllegalArgumentException("Неверный формат дроби.");
+            throw new IllegalArgumentException("Неверный формат дроби. Верный формат 'числитель/знаменатель'");
         }
         int num = Integer.parseInt(parts[0].trim());
         int den = Integer.parseInt(parts[1].trim());

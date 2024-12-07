@@ -1,6 +1,7 @@
 package simplexmetod;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -84,13 +85,19 @@ public class SimplexMethod {
      * @param rowIndex Id строки опорного элемента.
      * @param colIndex Id столбца опорного элемента.
      */
-    public void simplexMove(int rowIndex, int colIndex) {
+    public boolean simplexMove(int rowIndex, int colIndex, List<Integer> negativeElementFunc) {
 
         if (rowIndex < 0 || rowIndex >= matrix.getRows()) {
             throw new IllegalArgumentException("Id строки " + rowIndex + " выходит за пределы допустимого диапазона.");
         }
         if (colIndex < 0 || colIndex >= matrix.getCols()) {
             throw new IllegalArgumentException("Id столбца " + colIndex + " выходит за пределы допустимого диапазона.");
+        }
+
+        for (int i = 0; i < matrix.getRows(); i++) {
+            if (matrix.getElement(i, matrix.getCols() - 1).isLessThan(Fraction.ZERO)) {
+                matrix.setRowInMatrix(i, matrix.multiplyVectorByNumber(matrix.getRowFromMatrix(i), Fraction.NEGATIVE_ONE));
+            }
         }
 
         Fraction supElement = matrix.getElement(rowIndex, colIndex);
@@ -122,6 +129,7 @@ public class SimplexMethod {
                 matrix.setRowInMatrix(i, newLine, colIndex);
             }
         }
+        return true;
 
     }
 
@@ -149,7 +157,7 @@ public class SimplexMethod {
      *
      * @return Вектор с id столбцов, элементы которых являются отрицательными.
      */
-    private List<Integer> getNegativeVariableIndices() {
+    public List<Integer> getNegativeVariableIndices() {
         List<Integer> negativeIndices = new ArrayList<>();
 
         for (int i = 0; i < matrix.getCols() - 1; i++) {
@@ -161,6 +169,75 @@ public class SimplexMethod {
 
         return negativeIndices;
     }
+
+    /**
+     * Проверяет, являются ли все элементы в указанном столбце (кроме последнего) отрицательными.
+     *
+     * @param colIndex Id столбца для проверки.
+     * @return true, если все элементы в столбце (кроме последнего) отрицательные, иначе false.
+     */
+    private boolean checkUnlimited(int colIndex) {
+        for (int i = 0; i < matrix.getRows() - 1; i++) {
+            if (!matrix.getElement(i, colIndex).isLessThan(Fraction.ZERO)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    public Integer[][] getSupportElement(List<Integer> colIndex) {
+        if (colIndex == null || colIndex.isEmpty()) {
+            throw new IllegalArgumentException("Список colIndex не может быть null или пустым.");
+        }
+
+        Integer[][] supElementIndex = new Integer[colIndex.size()][2];
+
+        // Проходим по каждому индексу столбца
+        for (int i = 0; i < colIndex.size(); i++) {
+            int index = colIndex.get(i);
+            Fraction maxVariable = Fraction.NEGATIVE_ONE;
+            int supportRow = -1;
+
+            // Поиск строки с подходящим опорным элементом
+            for (int j = 0; j < matrix.getRows(); j++) {
+                Fraction denominator = matrix.getElement(j, index);
+                if (!denominator.isEqualTo(Fraction.ZERO)) {
+                    Fraction ratio = matrix.getElement(j, matrix.getCols() - 1).divide(denominator);
+                    if (ratio.isGreaterThan(maxVariable)) {
+                        maxVariable = ratio;
+                        supportRow = j;
+                    }
+                }
+            }
+
+            if (supportRow != -1) {
+                supElementIndex[i] = new Integer[]{supportRow, index};
+            } else {
+                throw new IllegalStateException("Опорный элемент для столбца " + index + " не найден.");
+            }
+        }
+
+        return supElementIndex;
+    }
+
+    public void printAnswer() {
+        Fraction[] vector = new Fraction[matrix.getRows() - 1 + matrix.getCols() - 1];
+        Arrays.fill(vector, Fraction.ZERO);
+
+        for (int i = 0; i < matrix.getRows() - 1; i++) {
+            vector[isBasicVariable.get(i)] = matrix.getElement(i, matrix.getCols() - 1);
+        }
+
+        System.out.println("f' = " + matrix.getElement(matrix.getRows() - 1, matrix.getCols() - 1).multiply(Fraction.NEGATIVE_ONE));
+        System.out.print("x̅ = (");
+        for (int i = 0; i < vector.length; i++) {
+            if (i == vector.length - 1) {
+                System.out.print(vector[i] + ")");
+            } else System.out.print(vector[i] + ",");
+        }
+    }
+
 
     /**
      * Выводит красивенько табличку.
