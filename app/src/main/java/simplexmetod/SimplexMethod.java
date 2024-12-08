@@ -82,10 +82,11 @@ public class SimplexMethod {
     /**
      * Симлекс-ход
      *
-     * @param rowIndex Id строки опорного элемента.
-     * @param colIndex Id столбца опорного элемента.
+     * @param rowIndex            Id строки опорного элемента.
+     * @param colIndex            Id столбца опорного элемента.
+     * @param negativeElementFunc Вектор id отрицательных значений целевой функции
      */
-    public boolean simplexMove(int rowIndex, int colIndex, List<Integer> negativeElementFunc) {
+    public void simplexMove(int rowIndex, int colIndex, List<Integer> negativeElementFunc) {
 
         if (rowIndex < 0 || rowIndex >= matrix.getRows()) {
             throw new IllegalArgumentException("Id строки " + rowIndex + " выходит за пределы допустимого диапазона.");
@@ -129,8 +130,6 @@ public class SimplexMethod {
                 matrix.setRowInMatrix(i, newLine, colIndex);
             }
         }
-        return true;
-
     }
 
     /**
@@ -186,41 +185,58 @@ public class SimplexMethod {
     }
 
 
-    public Integer[][] getSupportElement(List<Integer> colIndex) {
+    /**
+     * Находит все подходящие индексы элементов для опорного элемента.
+     *
+     * @param colIndex Вектор столбцов, в которых есть опорный элемент.
+     * @return Возвращает индексы возможных опорных элементов
+     */
+    public List<int[]> getSupportElement(List<Integer> colIndex) {
         if (colIndex == null || colIndex.isEmpty()) {
             throw new IllegalArgumentException("Список colIndex не может быть null или пустым.");
         }
 
-        Integer[][] supElementIndex = new Integer[colIndex.size()][2];
+        List<int[]> supElementIndices = new ArrayList<>(); // Список для хранения строк и столбцов
+        Fraction[] minValueVector = new Fraction[colIndex.size()]; // Массив для хранения максимальных значений
 
-        // Проходим по каждому индексу столбца
+        for (int i = 0; i < minValueVector.length; i++) {
+            minValueVector[i] = new Fraction(Integer.MAX_VALUE);
+        }
+
         for (int i = 0; i < colIndex.size(); i++) {
-            int index = colIndex.get(i);
-            Fraction maxVariable = Fraction.NEGATIVE_ONE;
-            int supportRow = -1;
-
-            // Поиск строки с подходящим опорным элементом
-            for (int j = 0; j < matrix.getRows(); j++) {
-                Fraction denominator = matrix.getElement(j, index);
+            int columnIndex = colIndex.get(i);
+            for (int j = 0; j < matrix.getRows() - 1; j++) {
+                Fraction denominator = matrix.getElement(j, columnIndex);
                 if (!denominator.isEqualTo(Fraction.ZERO)) {
                     Fraction ratio = matrix.getElement(j, matrix.getCols() - 1).divide(denominator);
-                    if (ratio.isGreaterThan(maxVariable)) {
-                        maxVariable = ratio;
-                        supportRow = j;
+                    if (ratio.isLessThan(minValueVector[i]) && ratio.isGreaterThan(Fraction.ZERO)) {
+                        minValueVector[i] = ratio;
                     }
                 }
             }
 
-            if (supportRow != -1) {
-                supElementIndex[i] = new Integer[]{supportRow, index};
-            } else {
-                throw new IllegalStateException("Опорный элемент для столбца " + index + " не найден.");
+            for (int j = 0; j < matrix.getRows() - 1; j++) {
+                Fraction denominator = matrix.getElement(j, columnIndex);
+                if (!denominator.isEqualTo(Fraction.ZERO)) {
+                    Fraction ratio = matrix.getElement(j, matrix.getCols() - 1).divide(denominator);
+                    if (ratio.isEqualTo(minValueVector[i])) {
+                        supElementIndices.add(new int[]{j, columnIndex});
+                    }
+                }
             }
         }
 
-        return supElementIndex;
+        if (supElementIndices.isEmpty()) {
+            throw new IllegalStateException("Опорные элементы не найдены.");
+        }
+
+        return supElementIndices;
     }
 
+
+    /**
+     * Вывод значения целевой функции и вектора x̅
+     */
     public void printAnswer() {
         Fraction[] vector = new Fraction[matrix.getRows() - 1 + matrix.getCols() - 1];
         Arrays.fill(vector, Fraction.ZERO);
@@ -245,12 +261,12 @@ public class SimplexMethod {
     public void printTable() {
         System.out.print("   ");
         for (int i = 0; i < isFreeVariable.toArray().length; i++) {
-            System.out.print("x" + isFreeVariable.get(i) + "\t");
+            System.out.print("x" + (isFreeVariable.get(i) + 1) + "\t");
         }
         System.out.print("\n");
 
         for (int i = 0; i < matrix.getRows() - 1; i++) {
-            System.out.print("x" + isBasicVariable.get(i) + " ");
+            System.out.print("x" + (isBasicVariable.get(i) + 1) + " ");
             matrix.printRow(i);
         }
         System.out.print("   ");

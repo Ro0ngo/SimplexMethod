@@ -102,6 +102,14 @@ public class Fraction {
         }
     }
 
+    /**
+     * Находит максимальное значение среди двух дробей.
+     *
+     * @param f1 Первая дробь.
+     * @param f2 Вторая дробь.
+     * @return Возвращает максимальное значение.
+     * @throws IllegalArgumentException Дробь имеет значение null.
+     */
     public static Fraction max(Fraction f1, Fraction f2) {
         if (f1 == null || f2 == null) {
             throw new IllegalArgumentException("Дроби не могут быть null.");

@@ -2,6 +2,7 @@ package simplexmetod;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Запуск симлекс-метода
@@ -56,6 +57,15 @@ public class App {
         if (table.getNegativeVariableIndices().isEmpty()){
             System.out.println(matrix.getElement(matrix.getRows(), matrix.getCols()).multiply(Fraction.NEGATIVE_ONE));
             return;
+        }
+
+        table.printTable();
+
+        List<int[]> supportElements = table.getSupportElement(table.getNegativeVariableIndices());
+
+        System.out.println("Опорные элементы:");
+        for (int[] element : supportElements) {
+            System.out.println("Строка: " + (element[0] + 1) + ", Столбец: " + (element[1] + 1));
         }
 
         table.simplexMove(1, 0, table.getNegativeVariableIndices());
