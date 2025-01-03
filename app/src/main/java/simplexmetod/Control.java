@@ -58,11 +58,14 @@ public class Control extends Application {
             alert.setHeaderText(null);
             alert.setContentText("""
                     1. Выберите количество переменных.
-                    2. Укажите количество свободных переменных.
+                    2. Укажите количество базисных переменных.
                     3. Выберите тип задачи (min/max).
                     4. Введите целевую функцию и матрицу.
                     5. Нажмите 'Применить' для обработки данных.
-                    6. Используйте 'Сохранить' для сохранения результатов.""");
+                    6. Используйте 'Сохранить' для сохранения результатов.
+                    7. Используйте 'Открыть' для получения результатов из файла.
+                    8. Нажмите 'Сбросить' для сброса данных.
+                    """);
             alert.showAndWait();
         });
 
@@ -81,7 +84,7 @@ public class Control extends Application {
         minMaxComboBox.getItems().addAll("min", "max");
         minMaxComboBox.setValue("min");
 
-        ComboBox<Integer> freeVarsComboBox = new ComboBox<>();
+        ComboBox<Integer> basisVarsComboBox = new ComboBox<>();
 
         ComboBox<String> fractionTypeComboBox = new ComboBox<>();
         fractionTypeComboBox.getItems().addAll("Обыкновенные", "Десятичные");
@@ -123,11 +126,11 @@ public class Control extends Application {
 
                 int count = numberComboBox.getValue();
 
-                freeVarsComboBox.getItems().clear();
+                basisVarsComboBox.getItems().clear();
                 for (int i = 1; i <= count; i++) {
-                    freeVarsComboBox.getItems().add(i);
+                    basisVarsComboBox.getItems().add(i);
                 }
-                freeVarsComboBox.setValue(1);
+                basisVarsComboBox.setValue(1);
 
                 List<BooleanProperty> validityList = new ArrayList<>();
 
@@ -210,11 +213,11 @@ public class Control extends Application {
 
         List<List<TextField>> matrixFields = new ArrayList<>();
 
-        freeVarsComboBox.setOnAction(event -> {
+        basisVarsComboBox.setOnAction(event -> {
             try {
-                if (numberComboBox.getValue() != null && freeVarsComboBox.getValue() != null) {
+                if (numberComboBox.getValue() != null && basisVarsComboBox.getValue() != null) {
                     int variablesCount = numberComboBox.getValue();
-                    int freeVarsCount = freeVarsComboBox.getValue();
+                    int freeVarsCount = basisVarsComboBox.getValue();
 
                     matrixBox.setVisible(true);
                     VBox matrixInputFields = new VBox(5);
@@ -308,7 +311,7 @@ public class Control extends Application {
         });
 
         HBox topRow = new HBox(10);
-        topRow.getChildren().addAll(new Label("Кол-во переменных:"), numberComboBox, new Label("Кол-во свободных:"), freeVarsComboBox, new Label("Задача на:"), minMaxComboBox, new Label("Вид дроби:"), fractionTypeComboBox);
+        topRow.getChildren().addAll(new Label("Кол-во переменных:"), numberComboBox, new Label("Кол-во базисных:"), basisVarsComboBox, new Label("Задача на:"), minMaxComboBox, new Label("Вид дроби:"), fractionTypeComboBox);
         topRow.setStyle("-fx-background-color: #f0f0f0; -fx-border-color: #dcdcdc; -fx-border-radius: 5; -fx-background-radius: 5;");
         topRow.setAlignment(Pos.CENTER_LEFT);
 
@@ -332,7 +335,7 @@ public class Control extends Application {
 
             if (file != null) {
                 saveToFile(file, collectData(numberComboBox,
-                        freeVarsComboBox,
+                        basisVarsComboBox,
                         minMaxComboBox,
                         fractionTypeComboBox,
                         goalFunctionFields,
@@ -350,7 +353,7 @@ public class Control extends Application {
                 loadData(
                         file.getAbsolutePath(),
                         numberComboBox,
-                        freeVarsComboBox,
+                        basisVarsComboBox,
                         minMaxComboBox,
                         fractionTypeComboBox,
                         goalFunctionFields,
@@ -370,30 +373,33 @@ public class Control extends Application {
 
         freeVarsTab.setContent(new StackPane(new Text("Необходимо выбрать данные во вкладке 'Постановки задачи' и нажать на кнопку 'Применить'")));
         applyButton.setOnAction(e -> {
-            String data = collectData(numberComboBox, freeVarsComboBox, minMaxComboBox, fractionTypeComboBox, goalFunctionFields, matrixFields);
-            freeVarsTab.setContent(createFreeVariablesTab(numberComboBox.getValue(), freeVarsComboBox.getValue()));
+            String data = collectData(numberComboBox, basisVarsComboBox, minMaxComboBox, fractionTypeComboBox, goalFunctionFields, matrixFields);
+            freeVarsTab.setContent(createBasisVariablesTab(numberComboBox.getValue(), basisVarsComboBox.getValue()));
             System.out.println(data);
         });
 
         applyButton.setDisable(true);
         resetButton.setOnAction(event -> {
             numberComboBox.setValue(null);
-            freeVarsComboBox.getItems().clear();
+            basisVarsComboBox.getItems().clear();
             minMaxComboBox.setValue("min");
+            fractionTypeComboBox.setValue("Обыкновенные");
+
             goalFunctionBox.setVisible(false);
             goalFunctionFields.getChildren().clear();
             matrixBox.setVisible(false);
+            matrixFields.forEach(row -> row.forEach(TextInputControl::clear));
+
+            freeVarsTab.setContent(new StackPane(new Text("Необходимо выбрать данные во вкладке 'Постановки задачи' и нажать на кнопку 'Применить'")));
             errorMessage.setVisible(false);
 
-            applyButton.setDisable(true);
-            freeVarsTab.setContent(new StackPane(new Text("Необходимо выбрать данные во вкладке 'Постановки задачи' и нажать на кнопку 'Применить'")));
         });
 
         tabPane.getTabs().addAll(taskTab, freeVarsTab, basicVarsTab);
 
         Scene scene = new Scene(tabPane, 800, 600);
         scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/styles.css")).toExternalForm());
-        primaryStage.setTitle("Матрица переменных");
+        primaryStage.setTitle("Задача линейного программирования");
         primaryStage.setScene(scene);
         primaryStage.show();
     }
@@ -431,14 +437,14 @@ public class Control extends Application {
         return matrixData;
     }
 
-    private String collectData(ComboBox<Integer> numberComboBox, ComboBox<Integer> freeVarsComboBox, ComboBox<String> minMaxComboBox, ComboBox<String> fractionTypeComboBox, HBox goalFunctionFields, List<List<TextField>> matrixFields) {
-        if (numberComboBox.getValue() == null || freeVarsComboBox.getValue() == null || minMaxComboBox.getValue() == null || fractionTypeComboBox.getSelectionModel().getSelectedIndex() == -1) {
-            showError("Пожалуйста, заполните обязаткльные поля.");
+    private String collectData(ComboBox<Integer> numberComboBox, ComboBox<Integer> basisVarsComboBox, ComboBox<String> minMaxComboBox, ComboBox<String> fractionTypeComboBox, HBox goalFunctionFields, List<List<TextField>> matrixFields) {
+        if (numberComboBox.getValue() == null || basisVarsComboBox.getValue() == null || minMaxComboBox.getValue() == null || fractionTypeComboBox.getSelectionModel().getSelectedIndex() == -1) {
+            showError("Пожалуйста, заполните обязательные поля.");
             return null;
         }
 
         Integer numberOfVariables = numberComboBox.getValue();
-        Integer numberOfFreeVars = freeVarsComboBox.getValue();
+        Integer numberOfFreeVars = basisVarsComboBox.getValue();
         String taskType = minMaxComboBox.getValue();
         int selectedIndex = fractionTypeComboBox.getSelectionModel().getSelectedIndex();
         int fractionType = selectedIndex == 0 ? 0 : 1;
@@ -490,7 +496,7 @@ public class Control extends Application {
     private void loadData(
             String filePath,
             ComboBox<Integer> numberComboBox,
-            ComboBox<Integer> freeVarsComboBox,
+            ComboBox<Integer> basisVarsComboBox,
             ComboBox<String> minMaxComboBox,
             ComboBox<String> fractionTypeComboBox,
             HBox goalFunctionFields,
@@ -498,22 +504,46 @@ public class Control extends Application {
     ) {
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             int numberOfVariables = Integer.parseInt(reader.readLine());
-            numberComboBox.setValue(numberOfVariables);
-
             int numberOfFreeVars = Integer.parseInt(reader.readLine());
-            freeVarsComboBox.setValue(numberOfFreeVars);
 
-            String taskType = reader.readLine();
-            minMaxComboBox.setValue(taskType);
+            if (numberOfVariables < numberOfFreeVars) {
+                throw new IllegalArgumentException("Количество переменных не может быть меньше количества базисных переменных.");
+            }
 
-            int fractionType = Integer.parseInt(reader.readLine());
-            fractionTypeComboBox.getSelectionModel().select(fractionType);
+            String taskType = reader.readLine().trim();
+            if (!taskType.equals("min") && !taskType.equals("max")) {
+                throw new IllegalArgumentException("Тип задачи должен быть 'min' или 'max'.");
+            }
+
+            int fractionType = Integer.parseInt(reader.readLine().trim());
+            if (fractionType != 0 && fractionType != 1) {
+                throw new IllegalArgumentException("Тип дроби должен быть 0 (для обыкновенных) или 1 (для десятичных).");
+            }
 
             String[] goalFunctionValues = reader.readLine().split(" ");
-            for (int i = 0; i < goalFunctionFields.getChildren().size(); i++) {
+            if (goalFunctionValues.length != numberOfVariables + 1) {
+                throw new IllegalArgumentException("Количество значений целевой функции должно быть равно количеству переменных + 1.");
+            }
+
+            List<String[]> matrixRows = new ArrayList<>();
+            for (List<TextField> rowFields : matrixFields) {
+                String[] rowValues = reader.readLine().split(" ");
+                if (rowValues.length != rowFields.size()) {
+                    throw new IllegalArgumentException("Количество значений в строке матрицы не совпадает с количеством полей.");
+                }
+                matrixRows.add(rowValues);
+            }
+
+            numberComboBox.setValue(numberOfVariables);
+            basisVarsComboBox.setValue(numberOfFreeVars);
+            minMaxComboBox.setValue(taskType);
+            fractionTypeComboBox.getSelectionModel().select(fractionType);
+
+            for (int i = 0; i < goalFunctionValues.length; i++) {
                 HBox fieldContainer = (HBox) goalFunctionFields.getChildren().get(i);
                 Node variableContainer = fieldContainer.getChildren().getFirst();
                 String value = goalFunctionValues[i];
+
                 if (variableContainer instanceof VBox vbox) {
                     TextField textField = (TextField) vbox.getChildren().get(1);
                     textField.setText(value);
@@ -523,14 +553,17 @@ public class Control extends Application {
                 }
             }
 
-            for (List<TextField> rowFields : matrixFields) {
-                String[] rowValues = reader.readLine().split(" ");
-                for (int j = 0; j < rowFields.size(); j++) {
-                    rowFields.get(j).setText(rowValues[j]);
+            for (int i = 0; i < matrixRows.size(); i++) {
+                String[] rowValues = matrixRows.get(i);
+                for (int j = 0; j < rowValues.length; j++) {
+                    matrixFields.get(i).get(j).setText(rowValues[j]);
                 }
             }
+
         } catch (IOException | NumberFormatException e) {
             showError("Ошибка при загрузке файла: " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            showError("Ошибка: " + e.getMessage());
         }
     }
 
@@ -542,7 +575,7 @@ public class Control extends Application {
         alert.showAndWait();
     }
 
-    private BorderPane createFreeVariablesTab(int variableCount, int maxSelectable) {
+    private BorderPane createBasisVariablesTab(int variableCount, int maxSelectable) {
         BorderPane borderPane = new BorderPane();
         borderPane.setPadding(new Insets(10));
 
@@ -561,7 +594,7 @@ public class Control extends Application {
             checkBoxes.add(checkBox);
         }
 
-        Label instructionLabel = new Label("Выберите свободные переменные:");
+        Label instructionLabel = new Label("Выберите базисные переменные:");
         instructionLabel.setPadding(new Insets(0, 10, 0, 0));
 
         HBox textAndVariablesBox = new HBox(10);
@@ -579,13 +612,17 @@ public class Control extends Application {
         buttonsBox.getChildren().addAll(backButton, solveButton);
 
         ChangeListener<Boolean> checkBoxListener = (observable, oldValue, newValue) -> {
-            long selectedCount = checkBoxes.stream().filter(CheckBox::isSelected).count();
+            List<Boolean> selectedStates = checkBoxes.stream()
+                    .map(CheckBox::isSelected)
+                    .toList();
 
+            long selectedCount = selectedStates.stream().filter(Boolean::booleanValue).count();
             for (CheckBox checkBox : checkBoxes) {
                 checkBox.setDisable(!checkBox.isSelected() && selectedCount >= maxSelectable);
             }
-
             solveButton.setDisable(selectedCount < maxSelectable);
+
+            System.out.println(selectedStates);
         };
 
         for (CheckBox checkBox : checkBoxes) {
