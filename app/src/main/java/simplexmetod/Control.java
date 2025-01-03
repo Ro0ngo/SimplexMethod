@@ -1,6 +1,10 @@
 package simplexmetod;
 
 import javafx.application.Application;
+import javafx.beans.Observable;
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -124,12 +128,16 @@ public class Control extends Application {
                 }
                 freeVarsComboBox.setValue(1);
 
+                List<BooleanProperty> validityList = new ArrayList<>();
+
                 for (int i = 0; i < count + 1; i++) {
                     HBox fieldContainer = new HBox(5);
                     fieldContainer.setAlignment(javafx.geometry.Pos.CENTER);
                     TextField textField = new TextField();
                     textField.setPrefWidth(50);
 
+                    BooleanProperty isValid = new SimpleBooleanProperty(true);
+                    validityList.add(isValid);
 
                     textField.textProperty().addListener((observable, oldValue, newValue) -> {
                         try {
@@ -138,11 +146,13 @@ public class Control extends Application {
                             String noLeadingZeroInFractionPattern = "^([1-9][0-9]*)/([1-9][0-9]*)$";
 
                             if (newValue.isEmpty()) {
-                                textField.setStyle("");
+                                textField.setStyle(""); // Пустое поле считается валидным
                                 errorMessage.setVisible(false);
+                                isValid.set(true);
                             } else if (newValue.matches(noLeadingZeroPattern)) {
                                 textField.setStyle("");
                                 errorMessage.setVisible(false);
+                                isValid.set(true);
                             } else if (newValue.matches(fractionPattern)) {
                                 String[] parts = newValue.split("/");
                                 try {
@@ -151,23 +161,28 @@ public class Control extends Application {
                                         textField.setStyle("-fx-border-color: red;");
                                         errorMessage.setText("Знаменатель не может быть равен 0");
                                         errorMessage.setVisible(true);
+                                        isValid.set(false);
                                     } else if (!newValue.matches(noLeadingZeroInFractionPattern)) {
                                         textField.setStyle("-fx-border-color: red;");
                                         errorMessage.setText("В дроби не могут быть ведущие нули");
                                         errorMessage.setVisible(true);
+                                        isValid.set(false);
                                     } else {
                                         textField.setStyle("");
                                         errorMessage.setVisible(false);
+                                        isValid.set(true);
                                     }
                                 } catch (NumberFormatException e) {
                                     textField.setStyle("-fx-border-color: red;");
                                     errorMessage.setText("Некорректный ввод");
                                     errorMessage.setVisible(true);
+                                    isValid.set(false);
                                 }
                             } else {
                                 textField.setStyle("-fx-border-color: red;");
                                 errorMessage.setText("Неверный формат. Введите число или дробь (число/число)");
-                                errorMessage.setVisible(true);  // Показываем ошибку
+                                errorMessage.setVisible(true);
+                                isValid.set(false);
                             }
                         } catch (Exception ignored) {
                         }
@@ -182,7 +197,12 @@ public class Control extends Application {
 
                     goalFunctionFields.getChildren().add(fieldContainer);
                 }
-                applyButton.setDisable(false);
+
+                applyButton.disableProperty().bind(Bindings.createBooleanBinding(
+                        () -> validityList.stream().anyMatch(valid -> !valid.get()),
+                        validityList.toArray(new Observable[] {})
+                ));
+
             } catch (Exception ignored) {
             }
         });
@@ -218,7 +238,6 @@ public class Control extends Application {
                     }
 
                     matrixBox.getChildren().add(columnHeaders);
-
                     matrixFields.clear();
 
                     for (int i = 0; i < freeVarsCount; i++) {
@@ -235,6 +254,47 @@ public class Control extends Application {
                             matrixCell.setPrefWidth(50);
                             row.getChildren().add(matrixCell);
 
+                            matrixCell.textProperty().addListener((observable, oldValue, newValue) -> {
+                                try {
+                                    String fractionPattern = "^\\d+/\\d+$";
+                                    String noLeadingZeroPattern = "^(0|([1-9][0-9]*))$";
+                                    String noLeadingZeroInFractionPattern = "^([1-9][0-9]*)/([1-9][0-9]*)$";
+
+                                    if (newValue.isEmpty()) {
+                                        matrixCell.setStyle("");
+                                        errorMessage.setVisible(false);
+                                    } else if (newValue.matches(noLeadingZeroPattern)) {
+                                        matrixCell.setStyle("");
+                                        errorMessage.setVisible(false);
+                                    } else if (newValue.matches(fractionPattern)) {
+                                        String[] parts = newValue.split("/");
+                                        try {
+                                            int denominator = Integer.parseInt(parts[1]);
+                                            if (denominator == 0) {
+                                                matrixCell.setStyle("-fx-border-color: red;");
+                                                errorMessage.setText("Знаменатель не может быть равен 0");
+                                                errorMessage.setVisible(true);
+                                            } else if (!newValue.matches(noLeadingZeroInFractionPattern)) {
+                                                matrixCell.setStyle("-fx-border-color: red;");
+                                                errorMessage.setText("В дроби не могут быть ведущие нули");
+                                                errorMessage.setVisible(true);
+                                            } else {
+                                                matrixCell.setStyle("");
+                                                errorMessage.setVisible(false);
+                                            }
+                                        } catch (NumberFormatException e) {
+                                            matrixCell.setStyle("-fx-border-color: red;");
+                                            errorMessage.setText("Некорректный ввод");
+                                            errorMessage.setVisible(true);
+                                        }
+                                    } else {
+                                        matrixCell.setStyle("-fx-border-color: red;");
+                                        errorMessage.setText("Неверный формат. Введите число или дробь (число/число)");
+                                        errorMessage.setVisible(true);
+                                    }
+                                } catch (Exception ignored) {
+                                }
+                            });
                             rowFields.add(matrixCell);
                         }
                         matrixFields.add(rowFields);
@@ -474,7 +534,6 @@ public class Control extends Application {
         borderPane.setPadding(new Insets(10));
 
         ArrayList<CheckBox> checkBoxes = new ArrayList<>();
-        ArrayList<Boolean> checkBoxStates = new ArrayList<>();
         HBox variablesBox = new HBox(10);
         variablesBox.setPadding(new Insets(10));
         variablesBox.setAlignment(Pos.CENTER);
@@ -496,12 +555,6 @@ public class Control extends Application {
         textAndVariablesBox.setAlignment(Pos.CENTER_LEFT);
         textAndVariablesBox.getChildren().addAll(instructionLabel, variablesBox);
         textAndVariablesBox.setSpacing(20);
-
-        for (CheckBox checkBox : checkBoxes) {
-            checkBox.selectedProperty().addListener((observable, oldValue, newValue) -> {
-                checkBoxStates.add(newValue);
-            });
-        }
 
         HBox buttonsBox = new HBox(10);
         buttonsBox.setAlignment(Pos.CENTER);
@@ -534,7 +587,6 @@ public class Control extends Application {
 
         return borderPane;
     }
-
 
     public static void main(String[] args) {
         launch();
