@@ -602,6 +602,9 @@ public class Control extends Application {
         textAndVariablesBox.getChildren().addAll(instructionLabel, variablesBox);
         textAndVariablesBox.setSpacing(20);
 
+        VBox matrixContainer = new VBox(10);
+        matrixContainer.setAlignment(Pos.CENTER);
+
         HBox buttonsBox = new HBox(10);
         buttonsBox.setAlignment(Pos.CENTER);
         Button backButton = new Button("Назад");
@@ -612,17 +615,30 @@ public class Control extends Application {
         buttonsBox.getChildren().addAll(backButton, solveButton);
 
         ChangeListener<Boolean> checkBoxListener = (observable, oldValue, newValue) -> {
-            List<Boolean> selectedStates = checkBoxes.stream()
-                    .map(CheckBox::isSelected)
-                    .toList();
+            long selectedCount = checkBoxes.stream().filter(CheckBox::isSelected).count();
 
-            long selectedCount = selectedStates.stream().filter(Boolean::booleanValue).count();
             for (CheckBox checkBox : checkBoxes) {
                 checkBox.setDisable(!checkBox.isSelected() && selectedCount >= maxSelectable);
             }
+
             solveButton.setDisable(selectedCount < maxSelectable);
 
-            System.out.println(selectedStates);
+            List<String> rowLabels = List.of("Row 1", "Row 2", "Row 3");
+            List<String> columnLabels = List.of("Col 1", "Col 2", "Col 3");
+            List<List<String>> matrix = List.of(
+                    List.of("1", "2", "3", "4"),
+                    List.of("5", "6", "7", "8"),
+                    List.of("9", "10", "11", "12"),
+                    List.of("13", "14", "15", "16")
+            );
+
+            if (selectedCount == maxSelectable) {
+                matrixContainer.getChildren().clear();
+                drawStyledButtonMatrix(matrixContainer, rowLabels, columnLabels, matrix);
+            }
+            else {
+                matrixContainer.getChildren().clear();
+            }
         };
 
         for (CheckBox checkBox : checkBoxes) {
@@ -630,12 +646,70 @@ public class Control extends Application {
         }
 
         borderPane.setTop(textAndVariablesBox);
+        borderPane.setCenter(matrixContainer);
         borderPane.setBottom(buttonsBox);
 
         BorderPane.setAlignment(buttonsBox, Pos.CENTER);
         BorderPane.setMargin(buttonsBox, new Insets(10));
 
         return borderPane;
+    }
+
+    private void drawStyledButtonMatrix(VBox container, List<String> rowLabels, List<String> columnLabels, List<List<String>> matrix) {
+        GridPane gridPane = new GridPane();
+        gridPane.setAlignment(Pos.CENTER);
+        gridPane.setHgap(5);
+        gridPane.setVgap(5);
+
+        int rows = rowLabels.size()+1;
+        int columns = columnLabels.size()+1;
+
+        String headerStyle = "-fx-font-weight: bold; -fx-font-size: 14px; -fx-alignment: center;";
+        String cellStyle = "-fx-alignment: center;";
+        String lastRowCellStyle = "-fx-background-color: lightblue; -fx-alignment: center;";
+        String lastColumnCellStyle = "-fx-background-color: lightgreen; -fx-alignment: center;";
+        String bottomRightCellStyle = "-fx-background-color: lightcoral; -fx-alignment: center;";
+
+        for (int j = 0; j < columns; j++) {
+            String columnLabel = (j == columns - 1) ? "const" : columnLabels.get(j);
+            Label columnHeader = new Label(columnLabel);
+            columnHeader.setStyle(headerStyle);
+            columnHeader.setMaxWidth(Double.MAX_VALUE);
+            columnHeader.setAlignment(Pos.CENTER);
+            gridPane.add(columnHeader, j + 1, 0);
+        }
+
+        for (int i = 0; i < rows; i++) {
+            String rowLabel = (i == rows - 1) ? "f(x)" : rowLabels.get(i);
+
+            Label rowHeader = new Label(rowLabel);
+            rowHeader.setStyle(headerStyle);
+            rowHeader.setMaxWidth(Double.MAX_VALUE);
+            rowHeader.setAlignment(Pos.CENTER);
+            gridPane.add(rowHeader, 0, i + 1);
+
+            for (int j = 0; j < columns; j++) {
+                Button button = new Button(matrix.get(i).get(j));
+                button.setPrefSize(50, 30);
+
+                if (i == rows - 1 && j == columns - 1) {
+                    button.setStyle(bottomRightCellStyle);
+                } else if (i == rows - 1) {
+                    button.setStyle(lastRowCellStyle);
+                } else if (j == columns - 1) {
+                    button.setStyle(lastColumnCellStyle);
+                } else {
+                    button.setStyle(cellStyle);
+                }
+
+                gridPane.add(button, j + 1, i + 1);
+            }
+        }
+
+        container.getChildren().clear();
+        container.setPadding(new Insets(0));
+        container.getChildren().add(gridPane);
+        container.setAlignment(Pos.CENTER);
     }
 
     public static void main(String[] args) {
