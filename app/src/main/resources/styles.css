@@ -1,0 +1,73 @@
+.check-box {
+    -fx-border-color: #0078D7;
+    -fx-border-width: 1.5px;
+    -fx-border-radius: 6px;
+    -fx-padding: 4px;
+    -fx-background-color: #FFFFFF;
+    -fx-mark-color: transparent;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.08), 3, 0, 0, 1);
+    -fx-transition: all 0.3s ease-in-out;
+}
+
+.check-box:hover {
+    -fx-border-color: #005FBF;
+    -fx-background-color: #F0F8FF;
+}
+
+.check-box:selected {
+    -fx-border-color: #4CAF50;
+    -fx-background-color: #E8F5E9;
+    -fx-mark-color: #4CAF50;
+}
+
+.check-box:selected:hover {
+    -fx-border-color: #388E3C;
+    -fx-background-color: #C8E6C9;
+}
+
+.action-button {
+    -fx-background-color: linear-gradient(to bottom, #0078D7, #005FBF);
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 10px 20px;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 5, 0, 0, 2);
+    -fx-transition: all 0.3s ease-in-out;
+}
+
+.action-button:hover {
+    -fx-background-color: linear-gradient(to bottom, #005FBF, #004899);
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 6, 0, 0, 2);
+}
+
+.action-button:pressed {
+    -fx-background-color: linear-gradient(to bottom, #004899, #003C80);
+    -fx-effect: none;
+}
+
+.apply-button {
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-background-radius: 5px;
+}
+
+.apply-button:hover {
+    -fx-background-color: #388E3C;
+}
+
+.reset-button {
+    -fx-background-color: #F44336;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-background-radius: 5px;
+}
+
+.reset-button:hover {
+    -fx-background-color: #D32F2F;
+}
+

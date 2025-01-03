@@ -31,13 +31,13 @@ public class App {
      * @param args йцу
      */
     public static void main(String[] args) {
-        boolean[] basisVector = { false, false, true, true };
+        boolean[] basisVector = {false, false, true, true};
         boolean[] vectorCopy = Arrays.copyOf(basisVector, basisVector.length);
         Fraction[] targetFunction = {new Fraction(-2), new Fraction(-1), new Fraction(-3), new Fraction(-1), new Fraction(0)};
 
-        Matrix matrix = new Matrix(new Fraction[][] {
-                { new Fraction(1), new Fraction(2), new Fraction(5), new Fraction(-1), new Fraction(4) },
-                { new Fraction(1), new Fraction(-1), new Fraction(-1), new Fraction(2), new Fraction(1) },
+        Matrix matrix = new Matrix(new Fraction[][]{
+                {new Fraction(1), new Fraction(2), new Fraction(5), new Fraction(-1), new Fraction(4)},
+                {new Fraction(1), new Fraction(-1), new Fraction(-1), new Fraction(2), new Fraction(1)},
         });
 
         matrix.rendererColumn(basisVector);
@@ -54,7 +54,7 @@ public class App {
         System.out.println();
 
 
-        if (table.getNegativeVariableIndices().isEmpty()){
+        if (table.getNegativeVariableIndices().isEmpty()) {
             System.out.println(matrix.getElement(matrix.getRows(), matrix.getCols()).multiply(Fraction.NEGATIVE_ONE));
             return;
         }
@@ -70,16 +70,22 @@ public class App {
 
         table.simplexMove(1, 0, table.getNegativeVariableIndices());
 
-        if (table.getNegativeVariableIndices().isEmpty()){
+        if (table.getNegativeVariableIndices().isEmpty()) {
             table.printAnswer();
             return;
+        }
+
+        supportElements = table.getSupportElement(table.getNegativeVariableIndices());
+        System.out.println("Опорные элементы:");
+        for (int[] element : supportElements) {
+            System.out.println("Строка: " + (element[0] + 1) + ", Столбец: " + (element[1] + 1));
         }
 
         table.printTable();
         table.simplexMove(0, 1, table.getNegativeVariableIndices());
 
         table.printTable();
-        if (table.getNegativeVariableIndices().isEmpty()){
+        if (table.getNegativeVariableIndices().isEmpty()) {
             table.printAnswer();
             return;
         }
