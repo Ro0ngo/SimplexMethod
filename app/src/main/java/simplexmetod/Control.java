@@ -17,6 +17,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import javafx.beans.value.ChangeListener;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -200,7 +201,7 @@ public class Control extends Application {
 
                 applyButton.disableProperty().bind(Bindings.createBooleanBinding(
                         () -> validityList.stream().anyMatch(valid -> !valid.get()),
-                        validityList.toArray(new Observable[] {})
+                        validityList.toArray(new Observable[]{})
                 ));
 
             } catch (Exception ignored) {
@@ -409,14 +410,18 @@ public class Control extends Application {
         }
     }
 
-    private List<List<Double>> getMatrixData(List<List<TextField>> matrixFields) {
-        List<List<Double>> matrixData = new ArrayList<>();
+    private List<List<Fraction>> getMatrixData(List<List<TextField>> matrixFields) {
+        List<List<Fraction>> matrixData = new ArrayList<>();
         try {
             for (List<TextField> rowFields : matrixFields) {
-                List<Double> rowData = new ArrayList<>();
+                List<Fraction> rowData = new ArrayList<>();
                 for (TextField cell : rowFields) {
                     String text = cell.getText().trim();
-                    rowData.add(text.isEmpty() ? 0.0 : Double.parseDouble(text));
+                    if (text.isEmpty()) {
+                        rowData.add(Fraction.ZERO);
+                    } else {
+                        rowData.add(Fraction.fromString(text));
+                    }
                 }
                 matrixData.add(rowData);
             }
@@ -444,28 +449,36 @@ public class Control extends Application {
                 .append(taskType).append("\n")
                 .append(fractionType).append("\n");
 
-        int[] goalFunctionValues = new int[numberOfVariables + 1];
+        Fraction[] goalFunctionValues = new Fraction[numberOfVariables + 1];
         for (int i = 0; i < goalFunctionFields.getChildren().size(); i++) {
             HBox fieldContainer = (HBox) goalFunctionFields.getChildren().get(i);
             Node variableContainer = fieldContainer.getChildren().getFirst();
             if (variableContainer instanceof VBox vbox) {
                 TextField textField = (TextField) vbox.getChildren().get(1);
                 String input = textField.getText().trim();
-                goalFunctionValues[i] = input.isEmpty() ? 0 : Integer.parseInt(input);
+                if (input.isEmpty()) {
+                    goalFunctionValues[i] = Fraction.ZERO;
+                } else {
+                    goalFunctionValues[i] = Fraction.fromString(input);
+                }
             } else if (variableContainer instanceof HBox hbox) {
                 TextField textField = (TextField) hbox.getChildren().get(1);
                 String input = textField.getText().trim();
-                goalFunctionValues[i] = input.isEmpty() ? 0 : Integer.parseInt(input);
+                if (input.isEmpty()) {
+                    goalFunctionValues[i] = Fraction.ZERO;
+                } else {
+                    goalFunctionValues[i] = Fraction.fromString(input);
+                }
             }
         }
-        for (int value : goalFunctionValues) {
+        for (Fraction value : goalFunctionValues) {
             dataBuilder.append(value).append(" ");
         }
         dataBuilder.append("\n");
 
-        List<List<Double>> matrixData = getMatrixData(matrixFields);
-        for (List<Double> row : matrixData) {
-            for (Double value : row) {
+        List<List<Fraction>> matrixData = getMatrixData(matrixFields);
+        for (List<Fraction> row : matrixData) {
+            for (Fraction value : row) {
                 dataBuilder.append(value).append(" ");
             }
             dataBuilder.append("\n");

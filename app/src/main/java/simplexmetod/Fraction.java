@@ -284,13 +284,24 @@ public class Fraction {
      * @throws IllegalArgumentException Если строка имеет неверный формат.
      */
     public static Fraction fromString(String fractionStr) {
-        String[] parts = fractionStr.split("/");
-        if (parts.length != 2) {
-            throw new IllegalArgumentException("Неверный формат дроби. Верный формат 'числитель/знаменатель'");
+        if (fractionStr == null || fractionStr.isBlank()) {
+            throw new IllegalArgumentException("Строка дроби не должна быть пустой или null.");
         }
-        int num = Integer.parseInt(parts[0].trim());
-        int den = Integer.parseInt(parts[1].trim());
-        return new Fraction(num, den);
+
+        String[] parts = fractionStr.split("/");
+        if (parts.length == 1) {
+            int num = Integer.parseInt(parts[0].trim());
+            return new Fraction(num, 1);
+        } else if (parts.length == 2) {
+            int num = Integer.parseInt(parts[0].trim());
+            int den = Integer.parseInt(parts[1].trim());
+            if (den == 0) {
+                throw new ArithmeticException("Знаменатель не может быть равен нулю.");
+            }
+            return new Fraction(num, den);
+        } else {
+            throw new IllegalArgumentException("Неверный формат дроби. Верный формат: 'числитель/знаменатель' или 'число'.");
+        }
     }
 
     /**
