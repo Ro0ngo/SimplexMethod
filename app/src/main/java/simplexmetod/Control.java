@@ -145,9 +145,9 @@ public class Control extends Application {
 
                     textField.textProperty().addListener((observable, oldValue, newValue) -> {
                         try {
-                            String fractionPattern = "^\\d+/\\d+$";
-                            String noLeadingZeroPattern = "^(0|([1-9][0-9]*))$";
-                            String noLeadingZeroInFractionPattern = "^([1-9][0-9]*)/([1-9][0-9]*)$";
+                            String fractionPattern = "^-?\\d+/\\d+$";
+                            String noLeadingZeroPattern = "^-?(0|([1-9][0-9]*))$";
+                            String noLeadingZeroInFractionPattern = "^-?([1-9][0-9]*)/([1-9][0-9]*)$";
 
                             if (newValue.isEmpty()) {
                                 textField.setStyle(""); // Пустое поле считается валидным
@@ -260,9 +260,9 @@ public class Control extends Application {
 
                             matrixCell.textProperty().addListener((observable, oldValue, newValue) -> {
                                 try {
-                                    String fractionPattern = "^\\d+/\\d+$";
-                                    String noLeadingZeroPattern = "^(0|([1-9][0-9]*))$";
-                                    String noLeadingZeroInFractionPattern = "^([1-9][0-9]*)/([1-9][0-9]*)$";
+                                    String fractionPattern = "^-?\\d+/\\d+$";
+                                    String noLeadingZeroPattern = "^-?(0|([1-9][0-9]*))$";
+                                    String noLeadingZeroInFractionPattern = "^-?([1-9][0-9]*)/([1-9][0-9]*)$";
 
                                     if (newValue.isEmpty()) {
                                         matrixCell.setStyle("");
@@ -510,6 +510,9 @@ public class Control extends Application {
                 throw new IllegalArgumentException("Количество переменных не может быть меньше количества базисных переменных.");
             }
 
+            numberComboBox.setValue(numberOfVariables);
+            basisVarsComboBox.setValue(numberOfFreeVars);
+
             String taskType = reader.readLine().trim();
             if (!taskType.equals("min") && !taskType.equals("max")) {
                 throw new IllegalArgumentException("Тип задачи должен быть 'min' или 'max'.");
@@ -534,8 +537,6 @@ public class Control extends Application {
                 matrixRows.add(rowValues);
             }
 
-            numberComboBox.setValue(numberOfVariables);
-            basisVarsComboBox.setValue(numberOfFreeVars);
             minMaxComboBox.setValue(taskType);
             fractionTypeComboBox.getSelectionModel().select(fractionType);
 
@@ -580,6 +581,8 @@ public class Control extends Application {
         borderPane.setPadding(new Insets(10));
 
         ArrayList<CheckBox> checkBoxes = new ArrayList<>();
+        List<Boolean> selectedValues = new ArrayList<>(variableCount);
+
         HBox variablesBox = new HBox(10);
         variablesBox.setPadding(new Insets(10));
         variablesBox.setAlignment(Pos.CENTER);
@@ -592,6 +595,7 @@ public class Control extends Application {
             variableBox.setAlignment(Pos.CENTER);
             variablesBox.getChildren().add(variableBox);
             checkBoxes.add(checkBox);
+            selectedValues.add(false);
         }
 
         Label instructionLabel = new Label("Выберите базисные переменные:");
@@ -617,7 +621,9 @@ public class Control extends Application {
         ChangeListener<Boolean> checkBoxListener = (observable, oldValue, newValue) -> {
             long selectedCount = checkBoxes.stream().filter(CheckBox::isSelected).count();
 
-            for (CheckBox checkBox : checkBoxes) {
+            for (int j = 0; j < checkBoxes.size(); j++) {
+                CheckBox checkBox = checkBoxes.get(j);
+                selectedValues.set(j, checkBox.isSelected());
                 checkBox.setDisable(!checkBox.isSelected() && selectedCount >= maxSelectable);
             }
 
@@ -632,9 +638,15 @@ public class Control extends Application {
                     List.of("13", "14", "15", "16")
             );
 
+            List<int[]> supportElements = List.of(new int[]{0, 1}, new int[]{1, 0}, new int[]{2,2});
+            int[] pivotElement = new int[]{0, 1};
+
             if (selectedCount == maxSelectable) {
                 matrixContainer.getChildren().clear();
-                drawStyledButtonMatrix(matrixContainer, rowLabels, columnLabels, matrix);
+                drawStyledButtonMatrix(matrixContainer, rowLabels, columnLabels, matrix, supportElements, pivotElement);
+                System.out.println(selectedValues);
+                Matrix matrixFromFields = convertToMatrix(matrix);
+                matrixFromFields.printMatrix();
             }
             else {
                 matrixContainer.getChildren().clear();
@@ -655,51 +667,60 @@ public class Control extends Application {
         return borderPane;
     }
 
-    private void drawStyledButtonMatrix(VBox container, List<String> rowLabels, List<String> columnLabels, List<List<String>> matrix) {
+    private void drawStyledButtonMatrix(
+            VBox container,
+            List<String> rowLabels,
+            List<String> columnLabels,
+            List<List<String>> matrix,
+            List<int[]> supportElements,
+            int[] pivotElement
+    ) {
         GridPane gridPane = new GridPane();
         gridPane.setAlignment(Pos.CENTER);
-        gridPane.setHgap(5);
-        gridPane.setVgap(5);
+        gridPane.setHgap(1);
+        gridPane.setVgap(1);
 
-        int rows = rowLabels.size()+1;
-        int columns = columnLabels.size()+1;
+        int rows = rowLabels.size() + 2;
+        int columns = columnLabels.size() + 2;
 
-        String headerStyle = "-fx-font-weight: bold; -fx-font-size: 14px; -fx-alignment: center;";
-        String cellStyle = "-fx-alignment: center;";
-        String lastRowCellStyle = "-fx-background-color: lightblue; -fx-alignment: center;";
-        String lastColumnCellStyle = "-fx-background-color: lightgreen; -fx-alignment: center;";
-        String bottomRightCellStyle = "-fx-background-color: lightcoral; -fx-alignment: center;";
-
-        for (int j = 0; j < columns; j++) {
-            String columnLabel = (j == columns - 1) ? "const" : columnLabels.get(j);
-            Label columnHeader = new Label(columnLabel);
-            columnHeader.setStyle(headerStyle);
+        for (int j = 0; j < columns - 1; j++) {
+            Label columnHeader = new Label(j == columns - 2 ? "const" : columnLabels.get(j));
+            columnHeader.getStyleClass().add("header-style");
             columnHeader.setMaxWidth(Double.MAX_VALUE);
             columnHeader.setAlignment(Pos.CENTER);
             gridPane.add(columnHeader, j + 1, 0);
         }
 
-        for (int i = 0; i < rows; i++) {
-            String rowLabel = (i == rows - 1) ? "f(x)" : rowLabels.get(i);
-
-            Label rowHeader = new Label(rowLabel);
-            rowHeader.setStyle(headerStyle);
+        for (int i = 0; i < rows - 1; i++) {
+            Label rowHeader = new Label(i == rows - 2 ? "f(x)" : rowLabels.get(i));
+            rowHeader.getStyleClass().add("header-style");
             rowHeader.setMaxWidth(Double.MAX_VALUE);
             rowHeader.setAlignment(Pos.CENTER);
             gridPane.add(rowHeader, 0, i + 1);
 
-            for (int j = 0; j < columns; j++) {
+            for (int j = 0; j < columns - 1; j++) {
                 Button button = new Button(matrix.get(i).get(j));
                 button.setPrefSize(50, 30);
 
-                if (i == rows - 1 && j == columns - 1) {
-                    button.setStyle(bottomRightCellStyle);
-                } else if (i == rows - 1) {
-                    button.setStyle(lastRowCellStyle);
-                } else if (j == columns - 1) {
-                    button.setStyle(lastColumnCellStyle);
+                if (i == rows - 2 && j == columns - 2) {
+                    button.getStyleClass().add("bottom-right-cell");
+                } else if (i == rows - 2 || j == columns - 2) {
+                    button.getStyleClass().add("last-row-column");
                 } else {
-                    button.setStyle(cellStyle);
+                    button.getStyleClass().add("cell-style");
+                }
+
+                for (int[] element : supportElements) {
+                    if (element[0] == i && element[1] == j) {
+                        button.getStyleClass().add("support-element");
+                        final int rowIndex = i;
+                        final int colIndex = j;
+                        button.setOnAction(event -> handleSupportElementClick(rowIndex, colIndex));
+                    }
+                }
+
+                if (pivotElement[0] == i && pivotElement[1] == j) {
+                    button.getStyleClass().add("pivot-element");
                 }
 
                 gridPane.add(button, j + 1, i + 1);
@@ -707,9 +728,28 @@ public class Control extends Application {
         }
 
         container.getChildren().clear();
-        container.setPadding(new Insets(0));
         container.getChildren().add(gridPane);
-        container.setAlignment(Pos.CENTER);
+    }
+
+
+    private void handleSupportElementClick(int row, int col) {
+        System.out.println("Row " + (row) + ", Col " + (col));
+    }
+
+    private Matrix convertToMatrix(List<List<String>> matrixFields) {
+        int rows = matrixFields.size();
+        int cols = matrixFields.getFirst().size();
+
+        Fraction[][] fractions = new Fraction[rows][cols];
+
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                String textValue = matrixFields.get(i).get(j);
+                fractions[i][j] = Fraction.fromString(textValue);
+            }
+        }
+
+        return new Matrix(fractions);
     }
 
     public static void main(String[] args) {
