@@ -371,9 +371,12 @@ public class Control extends Application {
         basicVarsTab.setClosable(false);
 
         freeVarsTab.setContent(new StackPane(new Text("Необходимо выбрать данные во вкладке 'Постановки задачи' и нажать на кнопку 'Применить'")));
+        basicVarsTab.setContent(new StackPane(new Text("Необходимо выбрать данные во вкладке 'Постановки задачи' и нажать на кнопку 'Применить'")));
+
         applyButton.setOnAction(e -> {
             String data = collectData(numberComboBox, basisVarsComboBox, minMaxComboBox, fractionTypeComboBox, goalFunctionFields, matrixFields);
-            freeVarsTab.setContent(createBasisVariablesTab(numberComboBox.getValue(), basisVarsComboBox.getValue(), matrixFields, goalFunctionFields, minMaxComboBox));
+            freeVarsTab.setContent(createBasisVariablesTab(numberComboBox.getValue(), basisVarsComboBox.getValue(), matrixFields, goalFunctionFields, minMaxComboBox, fractionTypeComboBox.getValue().equals("Десятичные")));
+            basicVarsTab.setContent(createArtificialBasis(matrixFields, goalFunctionFields, minMaxComboBox, fractionTypeComboBox.getValue().equals("Десятичные")));
             System.out.println(data);
         });
 
@@ -575,7 +578,36 @@ public class Control extends Application {
         alert.showAndWait();
     }
 
-    private BorderPane createBasisVariablesTab(int variableCount, int maxSelectable, List<List<TextField>> matrixFields, HBox goalFunctionFields, ComboBox<String> minMaxComboBox) {
+    private BorderPane createArtificialBasis(List<List<TextField>> matrixFields, HBox goalFunctionFields, ComboBox<String> minMaxComboBox, boolean isDecimal) {
+        int variableCount = matrixFields.getFirst().size();
+        int maxSelectable = matrixFields.size();
+
+        BorderPane borderPane = new BorderPane();
+        borderPane.setPadding(new Insets(10));
+
+        VBox matrixContainer = new VBox(10);
+        matrixContainer.setAlignment(Pos.CENTER);
+
+        TextArea matrixArea = new TextArea();
+        matrixArea.setEditable(false);
+
+        HBox buttonsBox = new HBox(10);
+        buttonsBox.setAlignment(Pos.CENTER);
+        Button backButton = new Button("Назад");
+        Button solveButton = new Button("Решение");
+        backButton.getStyleClass().add("action-button");
+        solveButton.getStyleClass().add("action-button");
+        solveButton.setDisable(true);
+        buttonsBox.getChildren().addAll(backButton, solveButton);
+
+        borderPane.setCenter(matrixContainer);
+        borderPane.setCenter(matrixArea);
+        borderPane.setBottom(buttonsBox);
+
+        return borderPane;
+    }
+
+    private BorderPane createBasisVariablesTab(int variableCount, int maxSelectable, List<List<TextField>> matrixFields, HBox goalFunctionFields, ComboBox<String> minMaxComboBox, boolean isDecimal) {
         BorderPane borderPane = new BorderPane();
         borderPane.setPadding(new Insets(10));
 
@@ -652,9 +684,6 @@ public class Control extends Application {
 
                     matrixFromFields.restoreColumnOrderWithVector();
 
-                    System.out.println(Arrays.toString(targetFunction));
-                    matrixFromFields.printMatrix();
-
                     if (minMaxComboBox.getValue() != null && minMaxComboBox.getValue().equals("max")) {
                         for (int i = 0; i < targetFunction.length; i++) {
                             targetFunction[i] = targetFunction[i].multiply(Fraction.NEGATIVE_ONE);
@@ -669,10 +698,10 @@ public class Control extends Application {
                     table.updateTable();
 
                     solveButton.setOnAction(event -> {
-                        processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, true, backButton);
+                        processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, true, backButton, isDecimal);
                     });
 
-                    processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, false, backButton);
+                    processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, false, backButton, isDecimal);
 
                 } else {
                     matrixContainer.getChildren().clear();
@@ -710,7 +739,8 @@ public class Control extends Application {
             List<Boolean> selectedValues,
             ComboBox<String> minMaxComboBox,
             boolean isDecision,
-            Button backButton
+            Button backButton,
+            boolean isDecimal
     ) {
         GridPane gridPane = new GridPane();
         gridPane.setAlignment(Pos.CENTER);
@@ -736,7 +766,17 @@ public class Control extends Application {
             gridPane.add(rowHeader, 0, i + 1);
 
             for (int j = 0; j < columns; j++) {
-                Button button = new Button(matrix.get(i).get(j));
+                Button button;
+
+                if (isDecimal) {
+                    String newValue = Fraction.decimalFromStringToString(matrix.get(i).get(j));
+                    button = new Button(newValue);
+                }
+
+                else {
+                    button = new Button(matrix.get(i).get(j));
+                }
+
                 button.setPrefSize(50, 30);
 
                 if (i == rows - 1 && j == columns - 1) {
@@ -752,7 +792,7 @@ public class Control extends Application {
                         isDecision = false;
                     }
                     table.simplexMove(pivotElement[0], pivotElement[1], table.getNegativeVariableIndices());
-                    processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, true, backButton);
+                    processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, true, backButton, isDecimal);
                 }
 
                 for (int[] element : supportElements) {
@@ -764,9 +804,8 @@ public class Control extends Application {
                             handleSupportElementClick(rowIndex, colIndex);
 
                             table.simplexMove(rowIndex, colIndex, table.getNegativeVariableIndices());
-                            processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, false, backButton);
+                            processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, false, backButton, isDecimal);
 
-                            table.printTable();
                         });
                     }
                 }
@@ -828,8 +867,6 @@ public class Control extends Application {
             TextField textField = (TextField) centeredContainer.getChildren().get(1);
 
             String input = textField.getText().trim();
-            System.out.println(input);
-            System.out.println(Fraction.fromString(input));
             targetFunction[i] = Fraction.fromString(input);
         }
 
@@ -866,7 +903,7 @@ public class Control extends Application {
         return fractionMatrix;
     }
 
-    private String getFormattedAnswer(SimplexMethod table, String taskType) {
+    private String getFormattedAnswer(SimplexMethod table, String taskType, boolean isDecimal) {
         StringBuilder result = new StringBuilder();
 
         Fraction[] vector = new Fraction[table.getMatrix().getRows() - 1 + table.getMatrix().getCols() - 1];
@@ -876,18 +913,21 @@ public class Control extends Application {
             vector[table.getIsBasic().get(i)] = table.getMatrix().getElement(i, table.getMatrix().getCols() - 1);
         }
 
-        Fraction objectiveValue = table.getMatrix()
-                .getElement(table.getMatrix().getRows() - 1, table.getMatrix().getCols() - 1);
+        Fraction objectiveValue = table.getMatrix().getElement(table.getMatrix().getRows() - 1, table.getMatrix().getCols() - 1);
 
         if (taskType.equals("min")) {
             objectiveValue = objectiveValue.multiply(Fraction.NEGATIVE_ONE);
         }
 
-        result.append(String.format("f' = %s%n", objectiveValue));
+        if (isDecimal) {
+            result.append(String.format("f' = %s%n", objectiveValue.toDecimal()));
+        } else {
+            result.append(String.format("f' = %s%n", objectiveValue));
+        }
 
         result.append("x̅ = (");
         for (int i = 0; i < vector.length; i++) {
-            result.append(vector[i]);
+            result.append(isDecimal ? vector[i].toDecimal() : vector[i]);
             if (i < vector.length - 1) {
                 result.append(", ");
             }
@@ -897,36 +937,40 @@ public class Control extends Application {
         return result.toString();
     }
 
-    private String determineAnswer(SimplexMethod table, String taskType) {
+
+    private String determineAnswer(SimplexMethod table, String taskType, boolean isDecimal) {
         if (table.unlimitedVerification()) {
             if (taskType.equals("min")) {
                 return "Неограничено снизу";
             }
             return "Неограничено сверху";
         } else {
-            return getFormattedAnswer(table, taskType);
+            return getFormattedAnswer(table, taskType, isDecimal);
         }
     }
 
     private void processAndDisplayMatrix(SimplexMethod table, List<SimplexMethod> simplexMethodList,
                                          TextArea matrixArea, VBox matrixContainer, List<Boolean> selectedValues,
                                          ComboBox<String> minMaxComboBox,
-                                         boolean isDecision, Button backButton) {
+                                         boolean isDecision, Button backButton, boolean isDecimal) {
         matrixContainer.getChildren().clear();
+        matrixArea.setVisible(false);
+
         simplexMethodList.add(table);
+        for (int i = 0; i < simplexMethodList.size(); i++) {
+            System.out.println(i);
+            simplexMethodList.get(i).printTable();
+        }
 
         table = simplexMethodList.getLast();
 
         List<String> rowLabels = table.convertToStringList(table.getIsBasic());
         List<String> columnLabels = table.convertToStringList(table.getIsFree());
 
-        table.printTable();
-
         if ((!(table.getNegativeVariableIndices() == null || table.getNegativeVariableIndices().isEmpty())
                 && table.getSupportElement(table.getNegativeVariableIndices()) != null
                 && !table.getSupportElement(table.getNegativeVariableIndices()).isEmpty())) {
             List<int[]> supportElements = table.getSupportElement(table.getNegativeVariableIndices());
-            System.out.println(Arrays.toString(table.getBestSupportElement()));
 
             int[] pivotElement = table.getBestSupportElement();
 
@@ -937,13 +981,13 @@ public class Control extends Application {
                     pivotElement, table, simplexMethodList,
                     matrixArea, matrixContainer,
                     selectedValues, minMaxComboBox,
-                    isDecision, backButton);
+                    isDecision, backButton, isDecimal);
 
             System.out.println(selectedValues);
         } else {
             SimplexMethod finalTable = table;
             Platform.runLater(() -> {
-                String answer = determineAnswer(finalTable, minMaxComboBox.getValue());
+                String answer = determineAnswer(finalTable, minMaxComboBox.getValue(), isDecimal);
 
                 matrixArea.setText(answer);
                 matrixArea.setVisible(true);
@@ -953,7 +997,6 @@ public class Control extends Application {
             matrixContainer.getChildren().add(matrixArea);
             matrixArea.setManaged(true);
 
-            table.printTable();
         }
     }
 

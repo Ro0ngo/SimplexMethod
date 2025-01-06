@@ -304,6 +304,13 @@ public class Fraction {
         }
     }
 
+    public static String decimalFromStringToString(String text) {
+        Fraction number = Fraction.fromString(text);
+        double doubleNumber = number.toDecimal();
+
+        return Double.toString(doubleNumber);
+    }
+
     /**
      * Строковое представление дроби в формате числитель/знаменатель
      *
