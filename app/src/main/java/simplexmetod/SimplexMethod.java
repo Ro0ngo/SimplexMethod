@@ -94,7 +94,7 @@ public class SimplexMethod {
             throw new IllegalArgumentException("Id столбца " + colIndex + " выходит за пределы допустимого диапазона.");
         }
 
-        for (int i = 0; i < matrix.getRows(); i++) {
+        for (int i = 0; i < matrix.getRows() - 1; i++) {
             if (matrix.getElement(i, matrix.getCols() - 1).isLessThan(Fraction.ZERO)) {
                 matrix.setRowInMatrix(i, matrix.multiplyVectorByNumber(matrix.getRowFromMatrix(i), Fraction.NEGATIVE_ONE));
             }
@@ -192,7 +192,7 @@ public class SimplexMethod {
      */
     public List<int[]> getSupportElement(List<Integer> colIndex) {
         if (colIndex == null || colIndex.isEmpty()) {
-            throw new IllegalArgumentException("Список colIndex не может быть null или пустым.");
+            return null;
         }
 
         List<int[]> supElementIndices = new ArrayList<>(); // Список для хранения строк и столбцов
@@ -226,7 +226,7 @@ public class SimplexMethod {
         }
 
         if (supElementIndices.isEmpty()) {
-            throw new IllegalStateException("Опорные элементы не найдены.");
+            return null;
         }
 
         return supElementIndices;

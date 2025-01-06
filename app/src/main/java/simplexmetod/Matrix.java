@@ -104,7 +104,7 @@ public class Matrix {
      *
      * @throws IllegalArgumentException Матрица содержит вырожденные строки или столбцы.
      */
-    public void forwardElimination() {
+    public boolean forwardElimination() {
         for (int i = 0; i < Math.min(rows, cols); i++) {
             int maxRow = i;
             for (int k = i + 1; k < rows; k++) {
@@ -114,7 +114,7 @@ public class Matrix {
             }
 
             if (data[maxRow][i].isEqualTo(Fraction.ZERO) || isRowDegenerate(maxRow) || isColumnDegenerate(i)) {
-                throw new IllegalArgumentException("Матрица содержит вырожденные строки или столбцы.");
+                return true;
             }
 
             Fraction[] temp = data[maxRow];
@@ -133,6 +133,7 @@ public class Matrix {
                 }
             }
         }
+        return false;
     }
 
 
@@ -256,9 +257,12 @@ public class Matrix {
     /**
      * Выполняет метод Гаусса, объединяющий прямой и обратный ходы.
      */
-    public void gauss() {
-        forwardElimination();
+    public boolean gauss() {
+        if (forwardElimination()){
+            return true;
+        }
         backwardSubstitution();
+        return false;
     }
 
     /**
