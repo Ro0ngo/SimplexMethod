@@ -1,6 +1,7 @@
 package simplexmetod;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
@@ -20,6 +21,7 @@ import javafx.beans.value.ChangeListener;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -136,7 +138,7 @@ public class Control extends Application {
 
                 for (int i = 0; i < count + 1; i++) {
                     HBox fieldContainer = new HBox(5);
-                    fieldContainer.setAlignment(javafx.geometry.Pos.CENTER);
+                    fieldContainer.setAlignment(Pos.CENTER);
                     TextField textField = new TextField();
                     textField.setPrefWidth(50);
 
@@ -195,7 +197,7 @@ public class Control extends Application {
                     Label variableLabel = new Label("x" + (i == count ? "0" : (i + 1)));
 
                     VBox centeredContainer = new VBox(5);
-                    centeredContainer.setAlignment(javafx.geometry.Pos.CENTER);
+                    centeredContainer.setAlignment(Pos.CENTER);
                     centeredContainer.getChildren().addAll(variableLabel, textField);
                     fieldContainer.getChildren().add(centeredContainer);
 
@@ -374,7 +376,7 @@ public class Control extends Application {
         freeVarsTab.setContent(new StackPane(new Text("Необходимо выбрать данные во вкладке 'Постановки задачи' и нажать на кнопку 'Применить'")));
         applyButton.setOnAction(e -> {
             String data = collectData(numberComboBox, basisVarsComboBox, minMaxComboBox, fractionTypeComboBox, goalFunctionFields, matrixFields);
-            freeVarsTab.setContent(createBasisVariablesTab(numberComboBox.getValue(), basisVarsComboBox.getValue()));
+            freeVarsTab.setContent(createBasisVariablesTab(numberComboBox.getValue(), basisVarsComboBox.getValue(), matrixFields, goalFunctionFields, minMaxComboBox));
             System.out.println(data);
         });
 
@@ -576,7 +578,7 @@ public class Control extends Application {
         alert.showAndWait();
     }
 
-    private BorderPane createBasisVariablesTab(int variableCount, int maxSelectable) {
+    private BorderPane createBasisVariablesTab(int variableCount, int maxSelectable, List<List<TextField>> matrixFields, HBox goalFunctionFields, ComboBox<String> minMaxComboBox) {
         BorderPane borderPane = new BorderPane();
         borderPane.setPadding(new Insets(10));
 
@@ -609,6 +611,9 @@ public class Control extends Application {
         VBox matrixContainer = new VBox(10);
         matrixContainer.setAlignment(Pos.CENTER);
 
+        TextArea matrixArea = new TextArea();
+        matrixArea.setEditable(false);
+
         HBox buttonsBox = new HBox(10);
         buttonsBox.setAlignment(Pos.CENTER);
         Button backButton = new Button("Назад");
@@ -629,26 +634,72 @@ public class Control extends Application {
 
             solveButton.setDisable(selectedCount < maxSelectable);
 
-            List<String> rowLabels = List.of("Row 1", "Row 2", "Row 3");
-            List<String> columnLabels = List.of("Col 1", "Col 2", "Col 3");
-            List<List<String>> matrix = List.of(
-                    List.of("1", "2", "3", "4"),
-                    List.of("5", "6", "7", "8"),
-                    List.of("9", "10", "11", "12"),
-                    List.of("13", "14", "15", "16")
-            );
+//            List<String> rowLabels = List.of("Row 1", "Row 2");
+//            List<String> columnLabels = List.of("Col 1", "Col 2");
+//            List<List<String>> matrix = List.of(
+//                    List.of("1", "2", "3", "4"),
+//                    List.of("5", "6", "7", "8"),
+//                    List.of("9", "10", "11", "12"),
+//                    List.of("13", "14", "15", "16")
+//            );
 
-            List<int[]> supportElements = List.of(new int[]{0, 1}, new int[]{1, 0}, new int[]{2,2});
-            int[] pivotElement = new int[]{0, 1};
+//
+//            List<int[]> supportElements = List.of(new int[]{0, 1}, new int[]{1, 0});
+//            int[] pivotElement = new int[]{0, 0};
 
             if (selectedCount == maxSelectable) {
                 matrixContainer.getChildren().clear();
-                drawStyledButtonMatrix(matrixContainer, rowLabels, columnLabels, matrix, supportElements, pivotElement);
-                System.out.println(selectedValues);
-                Matrix matrixFromFields = convertToMatrix(matrix);
+                List<List<List<String>>> matrices = new ArrayList<>();
+
+                boolean[] booleanArray = new boolean[selectedValues.size()];
+                for (int i = 0; i < selectedValues.size(); i++) {
+                    booleanArray[i] = selectedValues.get(i);
+                }
+                boolean[] vectorCopy = Arrays.copyOf(booleanArray, booleanArray.length);
+                Fraction[] targetFunction = extractGoalFunctionValues(goalFunctionFields);
+
+                List<List<String>> stringMatrix = convertTextFieldsToStringMatrix(matrixFields);
+                Matrix matrixFromFields = convertToMatrix(stringMatrix);
+                matrixFromFields.rendererColumn(booleanArray);
+                matrixFromFields.gauss();
+                matrixFromFields.restoreColumnOrderWithVector();
+
+                System.out.println(Arrays.toString(targetFunction));
                 matrixFromFields.printMatrix();
-            }
-            else {
+
+                if (minMaxComboBox.getValue().equals("max")) {
+                    for (Fraction fraction : targetFunction) {
+                        fraction.multiply(Fraction.NEGATIVE_ONE);
+                    }
+                }
+                matrixFromFields.addRow(matrixFromFields.solution(targetFunction, matrixFromFields.isBasicVector(vectorCopy), matrixFromFields.isFreeVector(vectorCopy)));
+                matrixFromFields.removeColumns(matrixFromFields.isBasicVector(vectorCopy));
+                SimplexMethod table = new SimplexMethod(matrixFromFields, targetFunction, matrixFromFields.isBasicVector(vectorCopy), matrixFromFields.isFreeVector(vectorCopy));
+                table.updateTable();
+                matrices.add(table.getMatrixAsListOfStrings());
+                List<String> rowLabels = table.convertToStringList(table.getIsFree());
+                List<String> columnLabels = table.convertToStringList(table.getIsBasic());
+                table.printTable();
+
+                if (!(table.getNegativeVariableIndices() == null || table.getNegativeVariableIndices().isEmpty())){
+                    List<int[]> supportElements = table.getSupportElement(table.getNegativeVariableIndices());
+                    System.out.println(Arrays.toString(table.getBestSupportElement()));
+                    int[] pivotElement = table.getBestSupportElement();
+                    matrixArea.setVisible(false);
+                    drawStyledButtonMatrix(matrixContainer, rowLabels, columnLabels, table.getMatrixAsListOfStrings(), supportElements, pivotElement);
+                    System.out.println(selectedValues);
+                } else {
+                    Platform.runLater(() -> {
+                        String answer = determineAnswer(table, minMaxComboBox.getValue());
+                        matrixArea.setText(answer);
+                        matrixArea.setVisible(true);
+                        matrixArea.requestLayout();
+                    });
+                    matrixContainer.getChildren().add(matrixArea);
+                    matrixArea.setManaged(true);
+                    table.printTable();
+                }
+            } else {
                 matrixContainer.getChildren().clear();
             }
         };
@@ -680,31 +731,31 @@ public class Control extends Application {
         gridPane.setHgap(1);
         gridPane.setVgap(1);
 
-        int rows = rowLabels.size() + 2;
-        int columns = columnLabels.size() + 2;
+        int rows = rowLabels.size() + 1;
+        int columns = columnLabels.size() + 1;
 
-        for (int j = 0; j < columns - 1; j++) {
-            Label columnHeader = new Label(j == columns - 2 ? "const" : columnLabels.get(j));
+        for (int j = 0; j < columns; j++) {
+            Label columnHeader = new Label(j == columns - 1 ? "const" : columnLabels.get(j));
             columnHeader.getStyleClass().add("header-style");
             columnHeader.setMaxWidth(Double.MAX_VALUE);
             columnHeader.setAlignment(Pos.CENTER);
             gridPane.add(columnHeader, j + 1, 0);
         }
 
-        for (int i = 0; i < rows - 1; i++) {
-            Label rowHeader = new Label(i == rows - 2 ? "f(x)" : rowLabels.get(i));
+        for (int i = 0; i < rows; i++) {
+            Label rowHeader = new Label(i == rows - 1 ? "f(x)" : rowLabels.get(i));
             rowHeader.getStyleClass().add("header-style");
             rowHeader.setMaxWidth(Double.MAX_VALUE);
             rowHeader.setAlignment(Pos.CENTER);
             gridPane.add(rowHeader, 0, i + 1);
 
-            for (int j = 0; j < columns - 1; j++) {
+            for (int j = 0; j < columns; j++) {
                 Button button = new Button(matrix.get(i).get(j));
                 button.setPrefSize(50, 30);
 
-                if (i == rows - 2 && j == columns - 2) {
+                if (i == rows - 1 && j == columns - 1) {
                     button.getStyleClass().add("bottom-right-cell");
-                } else if (i == rows - 2 || j == columns - 2) {
+                } else if (i == rows - 1 || j == columns - 1) {
                     button.getStyleClass().add("last-row-column");
                 } else {
                     button.getStyleClass().add("cell-style");
@@ -750,6 +801,130 @@ public class Control extends Application {
         }
 
         return new Matrix(fractions);
+    }
+
+    private List<List<String>> convertTextFieldsToStringMatrix(List<List<TextField>> matrixFields) {
+        List<List<String>> stringMatrix = new ArrayList<>();
+
+        for (List<TextField> row : matrixFields) {
+            List<String> stringRow = new ArrayList<>();
+            for (TextField textField : row) {
+                stringRow.add(textField.getText());
+            }
+            stringMatrix.add(stringRow);
+        }
+
+        return stringMatrix;
+    }
+
+    public Fraction[] convertToFractionArray(HBox goalFunctionFields) {
+        int size = goalFunctionFields.getChildren().size();
+        Fraction[] targetFunction = new Fraction[size];
+
+        for (int i = 0; i < size; i++) {
+            Node node = goalFunctionFields.getChildren().get(i);
+
+            if (node instanceof TextField textField) {
+                String input = textField.getText().trim();
+
+                try {
+                    Fraction fraction = Fraction.fromString(input);
+                    targetFunction[i] = fraction;
+                } catch (IllegalArgumentException e) {
+                    targetFunction[i] = Fraction.ZERO;
+                }
+            }
+        }
+
+        return targetFunction;
+    }
+
+    public Fraction[] extractGoalFunctionValues(HBox goalFunctionFields) {
+        int size = goalFunctionFields.getChildren().size();
+        Fraction[] targetFunction = new Fraction[size];
+
+        for (int i = 0; i < size; i++) {
+            HBox fieldContainer = (HBox) goalFunctionFields.getChildren().get(i);
+            VBox centeredContainer = (VBox) fieldContainer.getChildren().getFirst();
+            TextField textField = (TextField) centeredContainer.getChildren().get(1);
+
+            String input = textField.getText().trim();
+            targetFunction[i] = Fraction.fromString(input);
+        }
+
+        return targetFunction;
+    }
+
+    private List<List<String>> convertMatrixToList(Fraction[][] data) {
+        List<List<String>> matrix = new ArrayList<>();
+
+        for (Fraction[] row : data) {
+            List<String> rowList = new ArrayList<>();
+            for (Fraction fraction : row) {
+                rowList.add(fraction.toString());
+            }
+            matrix.add(rowList);
+        }
+
+        return matrix;
+    }
+
+    private Fraction[][] convertStringMatrixToFractionMatrix(List<List<String>> stringMatrix) {
+        int rows = stringMatrix.size();
+        int cols = stringMatrix.getFirst().size();
+
+        Fraction[][] fractionMatrix = new Fraction[rows][cols];
+
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                String value = stringMatrix.get(i).get(j);
+                fractionMatrix[i][j] = Fraction.fromString(value);
+            }
+        }
+
+        return fractionMatrix; // Возвращаем полученную матрицу дробей
+    }
+
+    private String getFormattedAnswer(SimplexMethod table, String taskType) {
+        StringBuilder result = new StringBuilder();
+
+        Fraction[] vector = new Fraction[table.getMatrix().getRows() - 1 + table.getMatrix().getCols() - 1];
+        Arrays.fill(vector, Fraction.ZERO);
+
+        for (int i = 0; i < table.getMatrix().getRows() - 1; i++) {
+            vector[table.getIsBasic().get(i)] = table.getMatrix().getElement(i, table.getMatrix().getCols() - 1);
+        }
+
+        Fraction objectiveValue = table.getMatrix()
+                .getElement(table.getMatrix().getRows() - 1, table.getMatrix().getCols() - 1);
+
+        if (taskType.equals("min")) {
+            objectiveValue = objectiveValue.multiply(Fraction.NEGATIVE_ONE);
+        }
+
+        result.append(String.format("f' = %s%n", objectiveValue));
+
+        result.append("x̅ = (");
+        for (int i = 0; i < vector.length; i++) {
+            result.append(vector[i]);
+            if (i < vector.length - 1) {
+                result.append(", ");
+            }
+        }
+        result.append(")");
+
+        return result.toString();
+    }
+
+    private String determineAnswer(SimplexMethod table, String taskType) {
+        if (table.unlimitedVerification()) {
+            if (taskType.equals("min")) {
+                return "Неограничено снизу";
+            }
+            return "Неограничено сверху";
+        } else {
+            return getFormattedAnswer(table, taskType);
+        }
     }
 
     public static void main(String[] args) {

@@ -3,6 +3,7 @@ package simplexmetod;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Класс для работы с симлекс-методом, а в частности с таблицей
@@ -39,8 +40,6 @@ public class SimplexMethod {
         this.targetFunction = function;
         this.isBasicVariable = isBasic;
         this.isFreeVariable = isFree;
-
-
     }
 
     /**
@@ -173,11 +172,11 @@ public class SimplexMethod {
      * Проверяет, являются ли все элементы в указанном столбце (кроме последнего) отрицательными.
      *
      * @param colIndex Id столбца для проверки.
-     * @return true, если все элементы в столбце (кроме последнего) отрицательные, иначе false.
+     * @return true, если все элементы в столбце (кроме последнего) <= 0, иначе false.
      */
     private boolean checkUnlimited(int colIndex) {
         for (int i = 0; i < matrix.getRows() - 1; i++) {
-            if (!matrix.getElement(i, colIndex).isLessThan(Fraction.ZERO)) {
+            if (!matrix.getElement(i, colIndex).isGreaterThan(Fraction.ZERO)) {
                 return false;
             }
         }
@@ -233,6 +232,38 @@ public class SimplexMethod {
         return supElementIndices;
     }
 
+    public int[] getBestSupportElement() {
+        List<Integer> negativeIndices = getNegativeVariableIndices();
+        if (negativeIndices.isEmpty()) {
+            throw new IllegalStateException("Нет отрицательных переменных для обработки.");
+        }
+
+        List<int[]> supElementIndices = getSupportElement(negativeIndices);
+        if (supElementIndices.isEmpty()) {
+            throw new IllegalStateException("Опорные элементы не найдены.");
+        }
+
+        int[] bestElement = null;
+        Fraction minValue = Fraction.ONE;
+
+        for (int[] element : supElementIndices) {
+            int rowIndex = matrix.getRows() - 1; // Индекс строки
+            int colIndex = element[1]; // Индекс столбца
+            Fraction value = matrix.getElement(rowIndex, colIndex);
+            if (value.isLessThan(minValue)) {
+                System.out.println(1);
+                minValue = value;
+                bestElement = element;
+            }
+        }
+
+        if (bestElement == null) {
+            throw new IllegalStateException("Не удалось найти лучший опорный элемент.");
+        }
+
+        return bestElement; // Возвращаем массив int[]
+    }
+
 
     /**
      * Вывод значения целевой функции и вектора x̅
@@ -254,6 +285,33 @@ public class SimplexMethod {
         }
     }
 
+    public void updateTable() {
+        for (int i = 0; i < matrix.getRows() - 1; i++) {
+            if (matrix.getElement(i, matrix.getCols() - 1).isLessThan(Fraction.ZERO)) {
+                Fraction[] updatedRow = matrix.multiplyVectorByNumber(matrix.getRowFromMatrix(i), Fraction.NEGATIVE_ONE);
+                matrix.setRowInMatrix(i, updatedRow);
+            }
+        }
+    }
+
+    public boolean unlimitedVerification() {
+        for (int col = 0; col < matrix.getCols() - 1; col++) {
+            boolean isUnlimited = true;
+
+            for (int row = 0; row < matrix.getRows(); row++) {
+                if (matrix.getElement(row, col).isGreaterThan(Fraction.ZERO)) {
+                    isUnlimited = false;
+                    break;
+                }
+            }
+
+            if (isUnlimited) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /**
      * Выводит красивенько табличку.
@@ -271,5 +329,33 @@ public class SimplexMethod {
         }
         System.out.print("   ");
         matrix.printRow(matrix.getRows() - 1);
+    }
+
+    /**
+     * Преобразует текущую матрицу в список списков строк.
+     *
+     * @return Матрица как List<List<String>>.
+     */
+    public List<List<String>> getMatrixAsListOfStrings() {
+        List<List<String>> result = new ArrayList<>();
+
+        for (int i = 0; i < matrix.getRows(); i++) {
+            List<String> row = new ArrayList<>();
+            for (int j = 0; j < matrix.getCols(); j++) {
+                row.add(matrix.getElement(i, j).toString());
+            }
+            result.add(row);
+        }
+
+        return result;
+    }
+
+    public List<String> convertToStringList(List<Integer> integerList) {
+        if (integerList == null) {
+            return new ArrayList<>();
+        }
+        return integerList.stream()
+                .map(num -> "x" + (num + 1))
+                .collect(Collectors.toList());
     }
 }
