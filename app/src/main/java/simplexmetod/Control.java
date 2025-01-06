@@ -649,7 +649,7 @@ public class Control extends Application {
 
             if (selectedCount == maxSelectable) {
                 matrixContainer.getChildren().clear();
-                List<List<List<String>>> matrices = new ArrayList<>();
+                List<SimplexMethod> simplexMethodList = new ArrayList<>();
 
                 boolean[] booleanArray = new boolean[selectedValues.size()];
                 for (int i = 0; i < selectedValues.size(); i++) {
@@ -676,12 +676,15 @@ public class Control extends Application {
                 matrixFromFields.removeColumns(matrixFromFields.isBasicVector(vectorCopy));
                 SimplexMethod table = new SimplexMethod(matrixFromFields, targetFunction, matrixFromFields.isBasicVector(vectorCopy), matrixFromFields.isFreeVector(vectorCopy));
                 table.updateTable();
-                matrices.add(table.getMatrixAsListOfStrings());
+
+                simplexMethodList.add(table);
+                table = simplexMethodList.getLast();
+
                 List<String> rowLabels = table.convertToStringList(table.getIsFree());
                 List<String> columnLabels = table.convertToStringList(table.getIsBasic());
                 table.printTable();
 
-                if (!(table.getNegativeVariableIndices() == null || table.getNegativeVariableIndices().isEmpty())){
+                if (!(table.getNegativeVariableIndices() == null || table.getNegativeVariableIndices().isEmpty())) {
                     List<int[]> supportElements = table.getSupportElement(table.getNegativeVariableIndices());
                     System.out.println(Arrays.toString(table.getBestSupportElement()));
                     int[] pivotElement = table.getBestSupportElement();
@@ -689,8 +692,9 @@ public class Control extends Application {
                     drawStyledButtonMatrix(matrixContainer, rowLabels, columnLabels, table.getMatrixAsListOfStrings(), supportElements, pivotElement);
                     System.out.println(selectedValues);
                 } else {
+                    SimplexMethod finalTable = table;
                     Platform.runLater(() -> {
-                        String answer = determineAnswer(table, minMaxComboBox.getValue());
+                        String answer = determineAnswer(finalTable, minMaxComboBox.getValue());
                         matrixArea.setText(answer);
                         matrixArea.setVisible(true);
                         matrixArea.requestLayout();
@@ -784,7 +788,7 @@ public class Control extends Application {
 
 
     private void handleSupportElementClick(int row, int col) {
-        System.out.println("Row " + (row) + ", Col " + (col));
+        System.out.printf("Row: %d, Col: %d%n", row, col);
     }
 
     private Matrix convertToMatrix(List<List<String>> matrixFields) {
@@ -815,28 +819,6 @@ public class Control extends Application {
         }
 
         return stringMatrix;
-    }
-
-    public Fraction[] convertToFractionArray(HBox goalFunctionFields) {
-        int size = goalFunctionFields.getChildren().size();
-        Fraction[] targetFunction = new Fraction[size];
-
-        for (int i = 0; i < size; i++) {
-            Node node = goalFunctionFields.getChildren().get(i);
-
-            if (node instanceof TextField textField) {
-                String input = textField.getText().trim();
-
-                try {
-                    Fraction fraction = Fraction.fromString(input);
-                    targetFunction[i] = fraction;
-                } catch (IllegalArgumentException e) {
-                    targetFunction[i] = Fraction.ZERO;
-                }
-            }
-        }
-
-        return targetFunction;
     }
 
     public Fraction[] extractGoalFunctionValues(HBox goalFunctionFields) {
@@ -882,7 +864,7 @@ public class Control extends Application {
             }
         }
 
-        return fractionMatrix; // Возвращаем полученную матрицу дробей
+        return fractionMatrix;
     }
 
     private String getFormattedAnswer(SimplexMethod table, String taskType) {
