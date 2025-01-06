@@ -20,10 +20,7 @@ import javafx.stage.Stage;
 import javafx.beans.value.ChangeListener;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class Control extends Application {
 
@@ -677,32 +674,33 @@ public class Control extends Application {
                 SimplexMethod table = new SimplexMethod(matrixFromFields, targetFunction, matrixFromFields.isBasicVector(vectorCopy), matrixFromFields.isFreeVector(vectorCopy));
                 table.updateTable();
 
-                simplexMethodList.add(table);
-                table = simplexMethodList.getLast();
-
-                List<String> rowLabels = table.convertToStringList(table.getIsFree());
-                List<String> columnLabels = table.convertToStringList(table.getIsBasic());
-                table.printTable();
-
-                if (!(table.getNegativeVariableIndices() == null || table.getNegativeVariableIndices().isEmpty())) {
-                    List<int[]> supportElements = table.getSupportElement(table.getNegativeVariableIndices());
-                    System.out.println(Arrays.toString(table.getBestSupportElement()));
-                    int[] pivotElement = table.getBestSupportElement();
-                    matrixArea.setVisible(false);
-                    drawStyledButtonMatrix(matrixContainer, rowLabels, columnLabels, table.getMatrixAsListOfStrings(), supportElements, pivotElement);
-                    System.out.println(selectedValues);
-                } else {
-                    SimplexMethod finalTable = table;
-                    Platform.runLater(() -> {
-                        String answer = determineAnswer(finalTable, minMaxComboBox.getValue());
-                        matrixArea.setText(answer);
-                        matrixArea.setVisible(true);
-                        matrixArea.requestLayout();
-                    });
-                    matrixContainer.getChildren().add(matrixArea);
-                    matrixArea.setManaged(true);
-                    table.printTable();
-                }
+                processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox);
+//                simplexMethodList.add(table);
+//                table = simplexMethodList.getLast();
+//
+//                List<String> rowLabels = table.convertToStringList(table.getIsFree());
+//                List<String> columnLabels = table.convertToStringList(table.getIsBasic());
+//                table.printTable();
+//
+//                if (!(table.getNegativeVariableIndices() == null || table.getNegativeVariableIndices().isEmpty())) {
+//                    List<int[]> supportElements = table.getSupportElement(table.getNegativeVariableIndices());
+//                    System.out.println(Arrays.toString(table.getBestSupportElement()));
+//                    int[] pivotElement = table.getBestSupportElement();
+//                    matrixArea.setVisible(false);
+//                    drawStyledButtonMatrix(matrixContainer, rowLabels, columnLabels, table.getMatrixAsListOfStrings(), supportElements, pivotElement);
+//                    System.out.println(selectedValues);
+//                } else {
+//                    SimplexMethod finalTable = table;
+//                    Platform.runLater(() -> {
+//                        String answer = determineAnswer(finalTable, minMaxComboBox.getValue());
+//                        matrixArea.setText(answer);
+//                        matrixArea.setVisible(true);
+//                        matrixArea.requestLayout();
+//                    });
+//                    matrixContainer.getChildren().add(matrixArea);
+//                    matrixArea.setManaged(true);
+//                    table.printTable();
+//                }
             } else {
                 matrixContainer.getChildren().clear();
             }
@@ -728,7 +726,13 @@ public class Control extends Application {
             List<String> columnLabels,
             List<List<String>> matrix,
             List<int[]> supportElements,
-            int[] pivotElement
+            int[] pivotElement,
+            SimplexMethod table,
+            List<SimplexMethod> simplexMethodList,
+            TextArea matrixArea,
+            VBox matrixContainer,
+            List<Boolean> selectedValues,
+            ComboBox<String> minMaxComboBox
     ) {
         GridPane gridPane = new GridPane();
         gridPane.setAlignment(Pos.CENTER);
@@ -770,7 +774,14 @@ public class Control extends Application {
                         button.getStyleClass().add("support-element");
                         final int rowIndex = i;
                         final int colIndex = j;
-                        button.setOnAction(event -> handleSupportElementClick(rowIndex, colIndex));
+                        button.setOnAction(event -> {
+                            handleSupportElementClick(rowIndex, colIndex);
+
+                            table.simplexMove(rowIndex, colIndex, table.getNegativeVariableIndices());
+                            processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox);
+
+                            table.printTable();
+                        });
                     }
                 }
 
@@ -908,6 +919,51 @@ public class Control extends Application {
             return getFormattedAnswer(table, taskType);
         }
     }
+
+    private void processAndDisplayMatrix(SimplexMethod table, List<SimplexMethod> simplexMethodList,
+                                         TextArea matrixArea, VBox matrixContainer, List<Boolean> selectedValues,
+                                         ComboBox<String> minMaxComboBox) {
+        matrixContainer.getChildren().clear();
+        simplexMethodList.add(table);
+
+        table = simplexMethodList.getLast();
+
+        List<String> rowLabels = table.convertToStringList(table.getIsBasic());
+        List<String> columnLabels = table.convertToStringList(table.getIsFree());
+
+        table.printTable();
+
+        if (!(table.getNegativeVariableIndices() == null || table.getNegativeVariableIndices().isEmpty())) {
+            List<int[]> supportElements = table.getSupportElement(table.getNegativeVariableIndices());
+            System.out.println(Arrays.toString(table.getBestSupportElement()));
+
+            int[] pivotElement = table.getBestSupportElement();
+
+            matrixArea.setVisible(false);
+
+            drawStyledButtonMatrix(matrixContainer, rowLabels, columnLabels,
+                    table.getMatrixAsListOfStrings(), supportElements,
+                    pivotElement, table, simplexMethodList,
+                    matrixArea, matrixContainer, selectedValues, minMaxComboBox);
+
+            System.out.println(selectedValues);
+        } else {
+            SimplexMethod finalTable = table;
+            Platform.runLater(() -> {
+                String answer = determineAnswer(finalTable, minMaxComboBox.getValue());
+
+                matrixArea.setText(answer);
+                matrixArea.setVisible(true);
+                matrixArea.requestLayout();
+            });
+
+            matrixContainer.getChildren().add(matrixArea);
+            matrixArea.setManaged(true);
+
+            table.printTable();
+        }
+    }
+
 
     public static void main(String[] args) {
         launch();
