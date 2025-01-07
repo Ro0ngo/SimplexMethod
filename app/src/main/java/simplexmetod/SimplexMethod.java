@@ -164,7 +164,6 @@ public class SimplexMethod {
                 negativeIndices.add(i);
             }
         }
-
         return negativeIndices;
     }
 
@@ -199,7 +198,7 @@ public class SimplexMethod {
         Fraction[] minValueVector = new Fraction[colIndex.size()]; // Массив для хранения максимальных значений
 
         for (int i = 0; i < minValueVector.length; i++) {
-            minValueVector[i] = new Fraction(Integer.MAX_VALUE);
+            minValueVector[i] = new Fraction(Integer.MAX_VALUE/100);
         }
 
         for (int i = 0; i < colIndex.size(); i++) {
@@ -208,6 +207,9 @@ public class SimplexMethod {
                 Fraction denominator = matrix.getElement(j, columnIndex);
                 if (!denominator.isEqualTo(Fraction.ZERO)) {
                     Fraction ratio = matrix.getElement(j, matrix.getCols() - 1).divide(denominator);
+                    System.out.println(ratio);
+                    System.out.println(minValueVector[i]);
+                    System.out.println(ratio.isLessThan(minValueVector[i]));
                     if (ratio.isLessThan(minValueVector[i]) && ratio.isGreaterThan(Fraction.ZERO)) {
                         minValueVector[i] = ratio;
                     }

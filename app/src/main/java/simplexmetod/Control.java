@@ -600,8 +600,60 @@ public class Control extends Application {
         solveButton.setDisable(true);
         buttonsBox.getChildren().addAll(backButton, solveButton);
 
+        boolean[] booleanArray = new boolean[variableCount+maxSelectable-1];
+        for (int i = 0; i < variableCount-1; i++) {
+            booleanArray[i] = false;
+        }
+        for (int i = variableCount-1; i <= variableCount+maxSelectable-2; i++){
+            booleanArray[i] = true;
+        }
+
+        List<Boolean> selectedValues = new ArrayList<>(booleanArray.length-1);
+        for (boolean b : booleanArray) {
+            selectedValues.add(b);
+        }
+
+        try {
+            matrixContainer.getChildren().clear();
+            List<SimplexMethod> simplexMethodList = new ArrayList<>();
+            Fraction[] targetFunction = extractGoalFunctionValues(goalFunctionFields);
+
+            List<List<String>> stringMatrix = convertTextFieldsToStringMatrix(matrixFields);
+            Matrix matrixFromFields = convertToMatrix(stringMatrix);
+
+            if (minMaxComboBox.getValue() != null && minMaxComboBox.getValue().equals("max")) {
+                for (int i = 0; i < targetFunction.length; i++) {
+                    targetFunction[i] = targetFunction[i].multiply(Fraction.NEGATIVE_ONE);
+                }
+            }
+
+            Fraction[] newTargetFunction = new Fraction[targetFunction.length];
+            matrixFromFields.printMatrix();
+            for (int i = 0; i < newTargetFunction.length; i++) {
+                newTargetFunction[i] = matrixFromFields.getValueFromCol(i).multiply(Fraction.NEGATIVE_ONE);
+            }
+
+            matrixFromFields.addRow(newTargetFunction);
+
+            SimplexMethod table = new SimplexMethod(matrixFromFields,
+                    newTargetFunction, matrixFromFields.isBasicVector(booleanArray),
+                    matrixFromFields.isFreeVector(booleanArray));
+            table.updateTable();
+
+            System.out.println(table.getNegativeVariableIndices());
+            List<int[]> sup = table.getSupportElement(table.getNegativeVariableIndices());
+
+            for (int i = 0; i < sup.size(); i++) {
+                System.out.println(Arrays.toString(sup.get(i)));
+            }
+
+            processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, false, backButton, isDecimal);
+
+        } catch (IllegalArgumentException e) {
+            showError("Ошибка: " + e.getMessage());
+        }
+
         borderPane.setCenter(matrixContainer);
-        borderPane.setCenter(matrixArea);
         borderPane.setBottom(buttonsBox);
 
         return borderPane;

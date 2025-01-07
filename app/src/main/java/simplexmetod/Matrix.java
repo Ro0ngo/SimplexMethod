@@ -258,7 +258,7 @@ public class Matrix {
      * Выполняет метод Гаусса, объединяющий прямой и обратный ходы.
      */
     public boolean gauss() {
-        if (forwardElimination()){
+        if (forwardElimination()) {
             return true;
         }
         backwardSubstitution();
@@ -652,4 +652,15 @@ public class Matrix {
         }
         System.out.println();
     }
+
+    public Fraction getValueFromCol(int col) {
+        Fraction value = Fraction.ZERO;
+
+        for (Fraction[] datum : data) {
+            value = value.add(datum[col]);
+        }
+
+        return value;
+    }
+
 }
