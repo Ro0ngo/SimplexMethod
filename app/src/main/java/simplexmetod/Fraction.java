@@ -304,6 +304,11 @@ public class Fraction {
         }
     }
 
+    /**
+     * Преобразует строку из обычной дроби в десятичную дробь и затем обратно в строку.
+     * @param text Дробь в виде строки.
+     * @return Десятичная дробь в виде строки.
+     */
     public static String decimalFromStringToString(String text) {
         Fraction number = Fraction.fromString(text);
         double doubleNumber = number.toDecimal();

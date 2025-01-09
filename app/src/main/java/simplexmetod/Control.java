@@ -406,6 +406,11 @@ public class Control extends Application {
         primaryStage.show();
     }
 
+    /**
+     * Сохраняет данные в файл.
+     * @param file Файл.
+     * @param data Данные.
+     */
     private void saveToFile(File file, String data) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             writer.write(data);
@@ -418,6 +423,11 @@ public class Control extends Application {
         }
     }
 
+    /**
+     * Получение матрицы из виджетов.
+     * @param matrixFields Матрица.
+     * @return Преобразованная матрица.
+     */
     private List<List<Fraction>> getMatrixData(List<List<TextField>> matrixFields) {
         List<List<Fraction>> matrixData = new ArrayList<>();
         try {
@@ -439,6 +449,16 @@ public class Control extends Application {
         return matrixData;
     }
 
+    /**
+     * Получение данных из первой вкладки для сохранения.
+     * @param numberComboBox Кол-во строк матрицы.
+     * @param basisVarsComboBox Кол-во столбцов матрицы.
+     * @param minMaxComboBox Минимизация или максимизация целевой функции.
+     * @param fractionTypeComboBox Какой вид дроби интересует (обыкновенная или десятичная).
+     * @param goalFunctionFields Целевая функция.
+     * @param matrixFields Матрица.
+     * @return Возвращает строковое преставление этих данных.
+     */
     private String collectData(ComboBox<Integer> numberComboBox, ComboBox<Integer> basisVarsComboBox, ComboBox<String> minMaxComboBox, ComboBox<String> fractionTypeComboBox, HBox goalFunctionFields, List<List<TextField>> matrixFields) {
         if (numberComboBox.getValue() == null || basisVarsComboBox.getValue() == null || minMaxComboBox.getValue() == null || fractionTypeComboBox.getSelectionModel().getSelectedIndex() == -1) {
             showError("Пожалуйста, заполните обязательные поля.");
@@ -495,6 +515,16 @@ public class Control extends Application {
         return dataBuilder.toString();
     }
 
+    /**
+     * Чтение данных из файла
+     * @param filePath Путь до файла.
+     * @param numberComboBox Кол-во строк матрицы.
+     * @param basisVarsComboBox Кол-во столбцов матрицы.
+     * @param minMaxComboBox Минимизация или максимизация целевой функции.
+     * @param fractionTypeComboBox Вид дроби.
+     * @param goalFunctionFields Целевая функция.
+     * @param matrixFields Матрица.
+     */
     private void loadData(
             String filePath,
             ComboBox<Integer> numberComboBox,
@@ -570,6 +600,10 @@ public class Control extends Application {
         }
     }
 
+    /**
+     * Вывод ошибки на экран
+     * @param text Текст для ошибки
+     */
     private void showError(String text) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Ошибка");
@@ -578,7 +612,17 @@ public class Control extends Application {
         alert.showAndWait();
     }
 
-    private BorderPane createArtificialBasis(List<List<TextField>> matrixFields, HBox goalFunctionFields, ComboBox<String> minMaxComboBox, boolean isDecimal) {
+    /**
+     * Метод для работы с тнерьей вкладкой(базисными переменными).
+     * @param matrixFields Матрица.
+     * @param goalFunctionFields Целевая функция.
+     * @param minMaxComboBox Минимизация или максимизация.
+     * @param isDecimal Вид дроби.
+     * @return Отрисованная вкладка.
+     */
+    private BorderPane createArtificialBasis(List<List<TextField>> matrixFields,
+                                             HBox goalFunctionFields, ComboBox<String> minMaxComboBox,
+                                             boolean isDecimal) {
         int variableCount = matrixFields.getFirst().size();
         int maxSelectable = matrixFields.size();
 
@@ -633,6 +677,8 @@ public class Control extends Application {
                 newTargetFunction[i] = matrixFromFields.getValueFromCol(i).multiply(Fraction.NEGATIVE_ONE);
             }
 
+            List<Integer> freeVector = matrixFromFields.isFreeVector(booleanArray);
+
             matrixFromFields.addRow(newTargetFunction);
 
             SimplexMethod table = new SimplexMethod(matrixFromFields,
@@ -640,14 +686,14 @@ public class Control extends Application {
                     matrixFromFields.isFreeVector(booleanArray));
             table.updateTable();
 
-            System.out.println(table.getNegativeVariableIndices());
-            List<int[]> sup = table.getSupportElement(table.getNegativeVariableIndices());
-
-            for (int i = 0; i < sup.size(); i++) {
-                System.out.println(Arrays.toString(sup.get(i)));
-            }
-
             processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, false, backButton, isDecimal);
+
+            System.out.println("--------------");
+            freeVector = removeElement(freeVector, 0);
+            table = new SimplexMethod(matrixFromFields, matrixFromFields.isBasicVector(booleanArray), freeVector);
+            table.printTable();
+            System.out.println("-------------");
+
 
         } catch (IllegalArgumentException e) {
             showError("Ошибка: " + e.getMessage());
@@ -659,12 +705,27 @@ public class Control extends Application {
         return borderPane;
     }
 
-    private BorderPane createBasisVariablesTab(int variableCount, int maxSelectable, List<List<TextField>> matrixFields, HBox goalFunctionFields, ComboBox<String> minMaxComboBox, boolean isDecimal) {
+    /**
+     * Метод для отрисовки второй вкладки(свободные переменные).
+     * @param variableCount Кол-во переменных.
+     * @param maxSelectable Кол-во базисных переменных.
+     * @param matrixFields Матрица.
+     * @param goalFunctionFields Целевая функция.
+     * @param minMaxComboBox Минимизация или максимизация.
+     * @param isDecimal Тип дроби.
+     * @return Отрисованная вкладка.
+     */
+    private BorderPane createBasisVariablesTab(int variableCount, int maxSelectable,
+                                               List<List<TextField>> matrixFields,
+                                               HBox goalFunctionFields, ComboBox<String> minMaxComboBox,
+                                               boolean isDecimal) {
         BorderPane borderPane = new BorderPane();
         borderPane.setPadding(new Insets(10));
 
         ArrayList<CheckBox> checkBoxes = new ArrayList<>();
         List<Boolean> selectedValues = new ArrayList<>(variableCount);
+
+        List<SimplexMethod> tableList = new ArrayList<>();
 
         HBox variablesBox = new HBox(10);
         variablesBox.setPadding(new Insets(10));
@@ -750,11 +811,15 @@ public class Control extends Application {
                     table.updateTable();
 
                     solveButton.setOnAction(event -> {
-                        processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, true, backButton, isDecimal);
+                        backButton.setDisable(true);
+                        tableList.add(processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, true, backButton, isDecimal));
                     });
 
-                    processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, false, backButton, isDecimal);
+                    tableList.add(processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, false, backButton, isDecimal));
 
+                    System.out.println("_____");
+                    tableList.getLast().printTable();
+                    System.out.println("__________");
                 } else {
                     matrixContainer.getChildren().clear();
                 }
@@ -777,6 +842,24 @@ public class Control extends Application {
         return borderPane;
     }
 
+    /**
+     * Метод для отрисовки матрицы
+     * @param container Контейнер.
+     * @param rowLabels Вектор свободных переменных.
+     * @param columnLabels Вектор базисных переменных.
+     * @param matrix Матрица.
+     * @param supportElements Опорные элементы.
+     * @param pivotElement Лучший опорный элемент.
+     * @param table Таблица для симплекс метода.
+     * @param simplexMethodList Вектор из таблиц.
+     * @param matrixArea Виджет для отрисоки ответа.
+     * @param matrixContainer Контейнер для матрицы.
+     * @param selectedValues Базисные переменные.
+     * @param minMaxComboBox Минимизация или максимизация.
+     * @param isDecision Является ли ответом.
+     * @param backButton Кнопка назад.
+     * @param isDecimal Тип дроби.
+     */
     private void drawStyledButtonMatrix(
             VBox container,
             List<String> rowLabels,
@@ -875,10 +958,20 @@ public class Control extends Application {
     }
 
 
+    /**
+     * Вывод индексов кнопок, на которые нажали.
+     * @param row Строка кнопки.
+     * @param col Столбец кнопки.
+     */
     private void handleSupportElementClick(int row, int col) {
         System.out.printf("Row: %d, Col: %d%n", row, col);
     }
 
+    /**
+     * Переводит матрицу из строковой во Fraction
+     * @param matrixFields Матрица в строковом преставлении.
+     * @return Матрица в дробном преставлении.
+     */
     private Matrix convertToMatrix(List<List<String>> matrixFields) {
         int rows = matrixFields.size();
         int cols = matrixFields.getFirst().size();
@@ -895,6 +988,11 @@ public class Control extends Application {
         return new Matrix(fractions);
     }
 
+    /**
+     * Переводит матрицу из виджета в строковое представление.
+     * @param matrixFields Матрица, где каждый элемент это виджет.
+     * @return Матрица в строковом преставлении.
+     */
     private List<List<String>> convertTextFieldsToStringMatrix(List<List<TextField>> matrixFields) {
         List<List<String>> stringMatrix = new ArrayList<>();
 
@@ -909,6 +1007,11 @@ public class Control extends Application {
         return stringMatrix;
     }
 
+    /**
+     * Перевод целевой функции из виджетов во Fraction.
+     * @param goalFunctionFields Целевая функция.
+     * @return Изменённая целевая функция.
+     */
     public Fraction[] extractGoalFunctionValues(HBox goalFunctionFields) {
         int size = goalFunctionFields.getChildren().size();
         Fraction[] targetFunction = new Fraction[size];
@@ -925,6 +1028,11 @@ public class Control extends Application {
         return targetFunction;
     }
 
+    /**
+     * Переводит матрицу из Fraction в строковое представление.
+     * @param data Матрица.
+     * @return Изменённая матрица.
+     */
     private List<List<String>> convertMatrixToList(Fraction[][] data) {
         List<List<String>> matrix = new ArrayList<>();
 
@@ -939,22 +1047,14 @@ public class Control extends Application {
         return matrix;
     }
 
-    private Fraction[][] convertStringMatrixToFractionMatrix(List<List<String>> stringMatrix) {
-        int rows = stringMatrix.size();
-        int cols = stringMatrix.getFirst().size();
 
-        Fraction[][] fractionMatrix = new Fraction[rows][cols];
-
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                String value = stringMatrix.get(i).get(j);
-                fractionMatrix[i][j] = Fraction.fromString(value);
-            }
-        }
-
-        return fractionMatrix;
-    }
-
+    /**
+     * Получение ответа в симплекс методе.
+     * @param table Матрица.
+     * @param taskType Тип задачи(мин, макс).
+     * @param isDecimal Тип дроби.
+     * @return Строка для ответа.
+     */
     private String getFormattedAnswer(SimplexMethod table, String taskType, boolean isDecimal) {
         StringBuilder result = new StringBuilder();
 
@@ -990,6 +1090,13 @@ public class Control extends Application {
     }
 
 
+    /**
+     * Вывод ответа при решении задачи симлекс методом.
+     * @param table Матрица.
+     * @param taskType Тип задачи.
+     * @param isDecimal Тип дроби.
+     * @return Строковое представление ответа.
+     */
     private String determineAnswer(SimplexMethod table, String taskType, boolean isDecimal) {
         if (table.unlimitedVerification()) {
             if (taskType.equals("min")) {
@@ -1001,7 +1108,7 @@ public class Control extends Application {
         }
     }
 
-    private void processAndDisplayMatrix(SimplexMethod table, List<SimplexMethod> simplexMethodList,
+    private SimplexMethod processAndDisplayMatrix(SimplexMethod table, List<SimplexMethod> simplexMethodList,
                                          TextArea matrixArea, VBox matrixContainer, List<Boolean> selectedValues,
                                          ComboBox<String> minMaxComboBox,
                                          boolean isDecision, Button backButton, boolean isDecimal) {
@@ -1009,13 +1116,8 @@ public class Control extends Application {
         matrixArea.setVisible(false);
 
         simplexMethodList.add(table);
-        for (int i = 0; i < simplexMethodList.size(); i++) {
-            System.out.println(i);
-            simplexMethodList.get(i).printTable();
-        }
 
         table = simplexMethodList.getLast();
-
         List<String> rowLabels = table.convertToStringList(table.getIsBasic());
         List<String> columnLabels = table.convertToStringList(table.getIsFree());
 
@@ -1050,6 +1152,44 @@ public class Control extends Application {
             matrixArea.setManaged(true);
 
         }
+
+        return table;
+    }
+
+    /**
+     * Удаление элемента из массива.
+     * @param array Массив.
+     * @param index Индекс элемента для удаления.
+     * @return Новый массив.
+     */
+    public Fraction[] removeElement(Fraction[] array, int index) {
+        if (index < 0 || index >= array.length) {
+            throw new IndexOutOfBoundsException("Индекс вне диапазона: " + index);
+        }
+        Fraction[] newArray = new Fraction[array.length - 1];
+
+        System.arraycopy(array, 0, newArray, 0, index);
+        if (array.length - (index + 1) >= 0)
+            System.arraycopy(array, index + 1, newArray, index + 1 - 1, array.length - (index + 1));
+
+        return newArray;
+    }
+
+    /**
+     * Удаление элемента из списка.
+     * @param vector Вектор из целых чисел.
+     * @param index Индекс для удаления.
+     * @return Изменённый список.
+     */
+    public List<Integer> removeElement(List<Integer> vector, int index) {
+        if (index < 0 || index >= vector.size()) {
+            throw new IndexOutOfBoundsException("Индекс вне диапазона: " + index);
+        }
+
+        List<Integer> updatedVector = new ArrayList<>(vector);
+        updatedVector.remove(index);
+
+        return updatedVector;
     }
 
 

@@ -43,6 +43,31 @@ public class SimplexMethod {
     }
 
     /**
+     * Конструктор для симлекс метода. В частности для искусственного базиса.
+     *
+     * @param matrix  Матрица линейных уравнений.
+     * @param isBasic Вектор индексов базисных переменных.
+     * @param isFree  Вектор индексов свободных переменных.
+     */
+    public SimplexMethod(Matrix matrix, List<Integer> isBasic, List<Integer> isFree) {
+
+        if (matrix == null || isBasic == null || isFree == null) {
+            throw new IllegalArgumentException("Ни один из параметров не может быть null.");
+        }
+        if (matrix.getCols() != isFree.toArray().length + 1) {
+            throw new IllegalArgumentException("Длина целевой функции должна совпадать с кол-вом свободных переменных + 1");
+        }
+        if (matrix.getRows() != isBasic.toArray().length + 1) {
+            throw new IllegalArgumentException("Ширина целевой функции должна совпадать с кол-вом базисных переменных + 1");
+        }
+
+        this.matrix = matrix;
+        this.isBasicVariable = isBasic;
+        this.isFreeVariable = isFree;
+
+    }
+
+    /**
      * Возвращает матрицу.
      *
      * @return Матрица.
@@ -132,6 +157,22 @@ public class SimplexMethod {
     }
 
     /**
+     * Симлекс ход для базисного метода. С удалением столбца из матрицы.
+     *
+     * @param rowIndex            Кол-во строк матрицы.
+     * @param colIndex            Кол-во столбцов матрицы.
+     * @param negativeElementFunc Вектор столбцов по которым можно продолжить симлекс-ход.
+     * @param colDelete           Столбец который надо удалить.
+     */
+    public void simplexMoveWithDeleteLine(int rowIndex, int colIndex, List<Integer> negativeElementFunc, int colDelete) {
+
+        simplexMove(rowIndex, colIndex, negativeElementFunc);
+        matrix.removeColumn(colDelete);
+        this.isFreeVariable = removeElement(this.isFreeVariable, colDelete);
+
+    }
+
+    /**
      * Метод для перемещения двух значений между собой (В данном контексте для смены базисных и свободных переменных местами).
      *
      * @param freeIndex  Id в векторе свободных переменных.
@@ -198,7 +239,7 @@ public class SimplexMethod {
         Fraction[] minValueVector = new Fraction[colIndex.size()]; // Массив для хранения максимальных значений
 
         for (int i = 0; i < minValueVector.length; i++) {
-            minValueVector[i] = new Fraction(Integer.MAX_VALUE/100);
+            minValueVector[i] = new Fraction(Integer.MAX_VALUE / 100);
         }
 
         for (int i = 0; i < colIndex.size(); i++) {
@@ -207,9 +248,6 @@ public class SimplexMethod {
                 Fraction denominator = matrix.getElement(j, columnIndex);
                 if (!denominator.isEqualTo(Fraction.ZERO)) {
                     Fraction ratio = matrix.getElement(j, matrix.getCols() - 1).divide(denominator);
-                    System.out.println(ratio);
-                    System.out.println(minValueVector[i]);
-                    System.out.println(ratio.isLessThan(minValueVector[i]));
                     if (ratio.isLessThan(minValueVector[i]) && ratio.isGreaterThan(Fraction.ZERO)) {
                         minValueVector[i] = ratio;
                     }
@@ -234,6 +272,11 @@ public class SimplexMethod {
         return supElementIndices;
     }
 
+    /**
+     * Находит лучший опорный элемент
+     *
+     * @return Опорный элемент
+     */
     public int[] getBestSupportElement() {
         List<Integer> negativeIndices = getNegativeVariableIndices();
         if (negativeIndices.isEmpty()) {
@@ -287,6 +330,9 @@ public class SimplexMethod {
         }
     }
 
+    /**
+     * Преобразует матрицу так, чтобы значения в стоке матрицы были не отрицательными
+     */
     public void updateTable() {
         for (int i = 0; i < matrix.getRows() - 1; i++) {
             if (matrix.getElement(i, matrix.getCols() - 1).isLessThan(Fraction.ZERO)) {
@@ -296,6 +342,11 @@ public class SimplexMethod {
         }
     }
 
+    /**
+     * Проверяет состоит ли весь столбец из отрицательных элементов.
+     *
+     * @return Возвращает boolean значение. true - весь столбец отрицательный, false - иначе.
+     */
     public boolean unlimitedVerification() {
         for (int col = 0; col < matrix.getCols() - 1; col++) {
             boolean isUnlimited = true;
@@ -313,6 +364,24 @@ public class SimplexMethod {
         }
 
         return false;
+    }
+
+    /**
+     * Удаляет элемент из вектора
+     *
+     * @param vector Вектор
+     * @param index  Индекс элемента, который надо удалить
+     * @return Изменённый вектор
+     */
+    public List<Integer> removeElement(List<Integer> vector, int index) {
+        if (index < 0 || index >= vector.size()) {
+            throw new IndexOutOfBoundsException("Индекс вне диапазона: " + index);
+        }
+
+        List<Integer> updatedVector = new ArrayList<>(vector);
+        updatedVector.remove(index);
+
+        return updatedVector;
     }
 
     /**
@@ -352,6 +421,12 @@ public class SimplexMethod {
         return result;
     }
 
+    /**
+     * Переводит вектор целых значений в строковые.
+     *
+     * @param integerList Вектор целых значений.
+     * @return Вектор строковых значений.
+     */
     public List<String> convertToStringList(List<Integer> integerList) {
         if (integerList == null) {
             return new ArrayList<>();
@@ -360,4 +435,5 @@ public class SimplexMethod {
                 .map(num -> "x" + (num + 1))
                 .collect(Collectors.toList());
     }
+
 }

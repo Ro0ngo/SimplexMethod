@@ -663,4 +663,35 @@ public class Matrix {
         return value;
     }
 
+    /**
+     * Метод для сравнения двух матриц
+     *
+     * @param other Вторая матрица
+     * @return boolean значение. true - одинаковы, false - иначе
+     */
+    public boolean equals(Matrix other) {
+        if (other == null) {
+            return false;
+        }
+        if (data.length != other.data.length) {
+            return false;
+        }
+
+        for (int i = 0; i < data.length; i++) {
+            if (data[i].length != other.data[i].length) {
+                return false;
+            }
+        }
+
+        for (int i = 0; i < data.length; i++) {
+            for (int j = 0; j < data[i].length; j++) {
+                if (!data[i][j].isEqualTo(other.data[i][j])) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
 }
