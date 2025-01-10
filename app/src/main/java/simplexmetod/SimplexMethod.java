@@ -19,8 +19,8 @@ public class SimplexMethod {
      *
      * @param matrix   Матрица линейных уравнений (В контексте задания матрица A после преобразования методом Гаусса).
      * @param function Целевая функция.
-     * @param isBasic  Вектор индексов базисных переменных.
-     * @param isFree   Вектор индексов свободных переменных.
+     * @param isBasic  Вектор Id базисных переменных.
+     * @param isFree   Вектор Id свободных переменных.
      * @throws IllegalArgumentException Хотя бы один из параметров равен null
      * @throws IllegalArgumentException Длина целевой функции не совпадает с кол-вом солбцов матрицы
      */
@@ -46,8 +46,8 @@ public class SimplexMethod {
      * Конструктор для симлекс метода. В частности для искусственного базиса.
      *
      * @param matrix  Матрица линейных уравнений.
-     * @param isBasic Вектор индексов базисных переменных.
-     * @param isFree  Вектор индексов свободных переменных.
+     * @param isBasic Вектор Id базисных переменных.
+     * @param isFree  Вектор Id свободных переменных.
      */
     public SimplexMethod(Matrix matrix, List<Integer> isBasic, List<Integer> isFree) {
 
@@ -88,7 +88,7 @@ public class SimplexMethod {
     /**
      * Возвращает вектор базисные переменных.
      *
-     * @return Вектор индексов базисных переменных.
+     * @return Вектор Id базисных переменных.
      */
     public List<Integer> getIsBasic() {
         return isBasicVariable;
@@ -97,7 +97,7 @@ public class SimplexMethod {
     /**
      * Возвращает вектор свободных переменных.
      *
-     * @return Вектор индексов свободных переменных.
+     * @return Вектор Id свободных переменных.
      */
     public List<Integer> getIsFree() {
         return isFreeVariable;
@@ -159,16 +159,15 @@ public class SimplexMethod {
     /**
      * Симлекс ход для базисного метода. С удалением столбца из матрицы.
      *
-     * @param rowIndex            Кол-во строк матрицы.
-     * @param colIndex            Кол-во столбцов матрицы.
+     * @param rowIndex            Id строки опорного элемента.
+     * @param colIndex            Id столбца опорного элемента.
      * @param negativeElementFunc Вектор столбцов по которым можно продолжить симлекс-ход.
-     * @param colDelete           Столбец который надо удалить.
      */
-    public void simplexMoveWithDeleteLine(int rowIndex, int colIndex, List<Integer> negativeElementFunc, int colDelete) {
+    public void simplexMoveWithDeleteLine(int rowIndex, int colIndex, List<Integer> negativeElementFunc) {
 
         simplexMove(rowIndex, colIndex, negativeElementFunc);
-        matrix.removeColumn(colDelete);
-        this.isFreeVariable = removeElement(this.isFreeVariable, colDelete);
+        matrix.removeColumn(colIndex);
+        this.isFreeVariable = removeElement(this.isFreeVariable, colIndex);
 
     }
 
@@ -225,10 +224,10 @@ public class SimplexMethod {
 
 
     /**
-     * Находит все подходящие индексы элементов для опорного элемента.
+     * Находит все подходящие Id элементов для опорного элемента.
      *
      * @param colIndex Вектор столбцов, в которых есть опорный элемент.
-     * @return Возвращает индексы возможных опорных элементов
+     * @return Возвращает Id возможных опорных элементов
      */
     public List<int[]> getSupportElement(List<Integer> colIndex) {
         if (colIndex == null || colIndex.isEmpty()) {
@@ -292,8 +291,8 @@ public class SimplexMethod {
         Fraction minValue = Fraction.ONE;
 
         for (int[] element : supElementIndices) {
-            int rowIndex = matrix.getRows() - 1; // Индекс строки
-            int colIndex = element[1]; // Индекс столбца
+            int rowIndex = matrix.getRows() - 1; // Id строки
+            int colIndex = element[1]; // Id столбца
             Fraction value = matrix.getElement(rowIndex, colIndex);
             if (value.isLessThan(minValue)) {
                 System.out.println(1);
@@ -366,16 +365,25 @@ public class SimplexMethod {
         return false;
     }
 
+    public boolean isNonDegenerate () {
+        for (int i = 0; i < getIsBasic().size(); i++) {
+            if (getIsBasic().get(i) > matrix.getCols() + matrix.getRows() - 2) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /**
      * Удаляет элемент из вектора
      *
      * @param vector Вектор
-     * @param index  Индекс элемента, который надо удалить
+     * @param index  Id элемента, который надо удалить
      * @return Изменённый вектор
      */
     public List<Integer> removeElement(List<Integer> vector, int index) {
         if (index < 0 || index >= vector.size()) {
-            throw new IndexOutOfBoundsException("Индекс вне диапазона: " + index);
+            throw new IndexOutOfBoundsException("Id вне диапазона: " + index);
         }
 
         List<Integer> updatedVector = new ArrayList<>(vector);

@@ -172,7 +172,7 @@ public class Matrix {
 
 
     /**
-     * Преобразует целевую функцию, заменяя базисные переменные на свободные.
+     * Преобразует целевую функцию, заменяя базисные свободные на базисные с домножением на коэффициент в целевой функции.
      *
      * @param targetFunction Целевая функция.
      * @param isBasic        Вектор индексов базисных переменных.
@@ -208,6 +208,13 @@ public class Matrix {
     }
 
 
+    /**
+     * Домножаем строку из матрицы на число.
+     * @param row Строка.
+     * @param indexCol Кол-во столбцов.
+     * @param coefficient Коэффициент для домножения.
+     * @return Вектор домноженный на число.
+     */
     private Fraction[] createUpdateVector(int row, int indexCol, Fraction coefficient) {
         Fraction[] vector = getRowFromMatrix(row);
         vector[indexCol] = Fraction.ZERO;
@@ -692,6 +699,41 @@ public class Matrix {
         }
 
         return true;
+    }
+
+    /**
+     * Проверяет, являются ли все элементы массива Fraction[] нулями.
+     *
+     * @param fractions массив Fraction[], который нужно проверить
+     * @return true, если все элементы массива равны нулю; false, если хотя бы один элемент не равен нулю
+     */
+    public boolean areAllZeroes(Fraction[] fractions) {
+        if (fractions == null) {
+            return true;
+        }
+
+        for (Fraction fraction : fractions) {
+            if (fraction != null && !fraction.isEqualTo(Fraction.ZERO)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Удаляет последнюю строку из матрицы.
+     * Если массив пуст или содержит только одну строку, data станет пустым.
+     */
+    public void removeLastRow() {
+        if (data == null || data.length == 0) {
+            return; // Массив уже пуст
+        }
+
+        Fraction[][] newData = new Fraction[data.length - 1][];
+        System.arraycopy(data, 0, newData, 0, data.length - 1);
+
+        data = newData;
+        this.rows = this.rows - 1;
     }
 
 }

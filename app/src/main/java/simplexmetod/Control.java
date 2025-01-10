@@ -408,6 +408,7 @@ public class Control extends Application {
 
     /**
      * Сохраняет данные в файл.
+     *
      * @param file Файл.
      * @param data Данные.
      */
@@ -425,6 +426,7 @@ public class Control extends Application {
 
     /**
      * Получение матрицы из виджетов.
+     *
      * @param matrixFields Матрица.
      * @return Преобразованная матрица.
      */
@@ -451,12 +453,13 @@ public class Control extends Application {
 
     /**
      * Получение данных из первой вкладки для сохранения.
-     * @param numberComboBox Кол-во строк матрицы.
-     * @param basisVarsComboBox Кол-во столбцов матрицы.
-     * @param minMaxComboBox Минимизация или максимизация целевой функции.
+     *
+     * @param numberComboBox       Кол-во строк матрицы.
+     * @param basisVarsComboBox    Кол-во столбцов матрицы.
+     * @param minMaxComboBox       Минимизация или максимизация целевой функции.
      * @param fractionTypeComboBox Какой вид дроби интересует (обыкновенная или десятичная).
-     * @param goalFunctionFields Целевая функция.
-     * @param matrixFields Матрица.
+     * @param goalFunctionFields   Целевая функция.
+     * @param matrixFields         Матрица.
      * @return Возвращает строковое преставление этих данных.
      */
     private String collectData(ComboBox<Integer> numberComboBox, ComboBox<Integer> basisVarsComboBox, ComboBox<String> minMaxComboBox, ComboBox<String> fractionTypeComboBox, HBox goalFunctionFields, List<List<TextField>> matrixFields) {
@@ -517,13 +520,14 @@ public class Control extends Application {
 
     /**
      * Чтение данных из файла
-     * @param filePath Путь до файла.
-     * @param numberComboBox Кол-во строк матрицы.
-     * @param basisVarsComboBox Кол-во столбцов матрицы.
-     * @param minMaxComboBox Минимизация или максимизация целевой функции.
+     *
+     * @param filePath             Путь до файла.
+     * @param numberComboBox       Кол-во строк матрицы.
+     * @param basisVarsComboBox    Кол-во столбцов матрицы.
+     * @param minMaxComboBox       Минимизация или максимизация целевой функции.
      * @param fractionTypeComboBox Вид дроби.
-     * @param goalFunctionFields Целевая функция.
-     * @param matrixFields Матрица.
+     * @param goalFunctionFields   Целевая функция.
+     * @param matrixFields         Матрица.
      */
     private void loadData(
             String filePath,
@@ -602,6 +606,7 @@ public class Control extends Application {
 
     /**
      * Вывод ошибки на экран
+     *
      * @param text Текст для ошибки
      */
     private void showError(String text) {
@@ -614,10 +619,11 @@ public class Control extends Application {
 
     /**
      * Метод для работы с тнерьей вкладкой(базисными переменными).
-     * @param matrixFields Матрица.
+     *
+     * @param matrixFields       Матрица.
      * @param goalFunctionFields Целевая функция.
-     * @param minMaxComboBox Минимизация или максимизация.
-     * @param isDecimal Вид дроби.
+     * @param minMaxComboBox     Минимизация или максимизация.
+     * @param isDecimal          Вид дроби.
      * @return Отрисованная вкладка.
      */
     private BorderPane createArtificialBasis(List<List<TextField>> matrixFields,
@@ -644,15 +650,15 @@ public class Control extends Application {
         solveButton.setDisable(true);
         buttonsBox.getChildren().addAll(backButton, solveButton);
 
-        boolean[] booleanArray = new boolean[variableCount+maxSelectable-1];
-        for (int i = 0; i < variableCount-1; i++) {
+        boolean[] booleanArray = new boolean[variableCount + maxSelectable - 1];
+        for (int i = 0; i < variableCount - 1; i++) {
             booleanArray[i] = false;
         }
-        for (int i = variableCount-1; i <= variableCount+maxSelectable-2; i++){
+        for (int i = variableCount - 1; i <= variableCount + maxSelectable - 2; i++) {
             booleanArray[i] = true;
         }
 
-        List<Boolean> selectedValues = new ArrayList<>(booleanArray.length-1);
+        List<Boolean> selectedValues = new ArrayList<>(booleanArray.length - 1);
         for (boolean b : booleanArray) {
             selectedValues.add(b);
         }
@@ -686,13 +692,7 @@ public class Control extends Application {
                     matrixFromFields.isFreeVector(booleanArray));
             table.updateTable();
 
-            processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, false, backButton, isDecimal);
-
-            System.out.println("--------------");
-            freeVector = removeElement(freeVector, 0);
-            table = new SimplexMethod(matrixFromFields, matrixFromFields.isBasicVector(booleanArray), freeVector);
-            table.printTable();
-            System.out.println("-------------");
+            processAndDisplayMatrixForBasicMethod(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, false, backButton, isDecimal, table.getIsBasic().size(), targetFunction);
 
 
         } catch (IllegalArgumentException e) {
@@ -707,12 +707,13 @@ public class Control extends Application {
 
     /**
      * Метод для отрисовки второй вкладки(свободные переменные).
-     * @param variableCount Кол-во переменных.
-     * @param maxSelectable Кол-во базисных переменных.
-     * @param matrixFields Матрица.
+     *
+     * @param variableCount      Кол-во переменных.
+     * @param maxSelectable      Кол-во базисных переменных.
+     * @param matrixFields       Матрица.
      * @param goalFunctionFields Целевая функция.
-     * @param minMaxComboBox Минимизация или максимизация.
-     * @param isDecimal Тип дроби.
+     * @param minMaxComboBox     Минимизация или максимизация.
+     * @param isDecimal          Тип дроби.
      * @return Отрисованная вкладка.
      */
     private BorderPane createBasisVariablesTab(int variableCount, int maxSelectable,
@@ -844,21 +845,22 @@ public class Control extends Application {
 
     /**
      * Метод для отрисовки матрицы
-     * @param container Контейнер.
-     * @param rowLabels Вектор свободных переменных.
-     * @param columnLabels Вектор базисных переменных.
-     * @param matrix Матрица.
-     * @param supportElements Опорные элементы.
-     * @param pivotElement Лучший опорный элемент.
-     * @param table Таблица для симплекс метода.
+     *
+     * @param container         Контейнер.
+     * @param rowLabels         Вектор свободных переменных.
+     * @param columnLabels      Вектор базисных переменных.
+     * @param matrix            Матрица.
+     * @param supportElements   Опорные элементы.
+     * @param pivotElement      Лучший опорный элемент.
+     * @param table             Таблица для симплекс метода.
      * @param simplexMethodList Вектор из таблиц.
-     * @param matrixArea Виджет для отрисоки ответа.
-     * @param matrixContainer Контейнер для матрицы.
-     * @param selectedValues Базисные переменные.
-     * @param minMaxComboBox Минимизация или максимизация.
-     * @param isDecision Является ли ответом.
-     * @param backButton Кнопка назад.
-     * @param isDecimal Тип дроби.
+     * @param matrixArea        Виджет для отрисоки ответа.
+     * @param matrixContainer   Контейнер для матрицы.
+     * @param selectedValues    Базисные переменные.
+     * @param minMaxComboBox    Минимизация или максимизация.
+     * @param isDecision        Является ли ответом.
+     * @param backButton        Кнопка назад.
+     * @param isDecimal         Тип дроби.
      */
     private void drawStyledButtonMatrix(
             VBox container,
@@ -906,9 +908,8 @@ public class Control extends Application {
                 if (isDecimal) {
                     String newValue = Fraction.decimalFromStringToString(matrix.get(i).get(j));
                     button = new Button(newValue);
-                }
-
-                else {
+                } else {
+                    System.out.println(i + " " + j);
                     button = new Button(matrix.get(i).get(j));
                 }
 
@@ -960,6 +961,7 @@ public class Control extends Application {
 
     /**
      * Вывод индексов кнопок, на которые нажали.
+     *
      * @param row Строка кнопки.
      * @param col Столбец кнопки.
      */
@@ -969,6 +971,7 @@ public class Control extends Application {
 
     /**
      * Переводит матрицу из строковой во Fraction
+     *
      * @param matrixFields Матрица в строковом преставлении.
      * @return Матрица в дробном преставлении.
      */
@@ -990,6 +993,7 @@ public class Control extends Application {
 
     /**
      * Переводит матрицу из виджета в строковое представление.
+     *
      * @param matrixFields Матрица, где каждый элемент это виджет.
      * @return Матрица в строковом преставлении.
      */
@@ -1009,6 +1013,7 @@ public class Control extends Application {
 
     /**
      * Перевод целевой функции из виджетов во Fraction.
+     *
      * @param goalFunctionFields Целевая функция.
      * @return Изменённая целевая функция.
      */
@@ -1030,6 +1035,7 @@ public class Control extends Application {
 
     /**
      * Переводит матрицу из Fraction в строковое представление.
+     *
      * @param data Матрица.
      * @return Изменённая матрица.
      */
@@ -1050,8 +1056,9 @@ public class Control extends Application {
 
     /**
      * Получение ответа в симплекс методе.
-     * @param table Матрица.
-     * @param taskType Тип задачи(мин, макс).
+     *
+     * @param table     Матрица.
+     * @param taskType  Тип задачи(мин, макс).
      * @param isDecimal Тип дроби.
      * @return Строка для ответа.
      */
@@ -1092,8 +1099,9 @@ public class Control extends Application {
 
     /**
      * Вывод ответа при решении задачи симлекс методом.
-     * @param table Матрица.
-     * @param taskType Тип задачи.
+     *
+     * @param table     Матрица.
+     * @param taskType  Тип задачи.
      * @param isDecimal Тип дроби.
      * @return Строковое представление ответа.
      */
@@ -1109,9 +1117,9 @@ public class Control extends Application {
     }
 
     private SimplexMethod processAndDisplayMatrix(SimplexMethod table, List<SimplexMethod> simplexMethodList,
-                                         TextArea matrixArea, VBox matrixContainer, List<Boolean> selectedValues,
-                                         ComboBox<String> minMaxComboBox,
-                                         boolean isDecision, Button backButton, boolean isDecimal) {
+                                                  TextArea matrixArea, VBox matrixContainer, List<Boolean> selectedValues,
+                                                  ComboBox<String> minMaxComboBox,
+                                                  boolean isDecision, Button backButton, boolean isDecimal) {
         matrixContainer.getChildren().clear();
         matrixArea.setVisible(false);
 
@@ -1156,8 +1164,292 @@ public class Control extends Application {
         return table;
     }
 
+    private void processAndDisplayMatrixForBasicMethod(SimplexMethod table, List<SimplexMethod> simplexMethodList,
+                                                       TextArea matrixArea, VBox matrixContainer, List<Boolean> selectedValues,
+                                                       ComboBox<String> minMaxComboBox,
+                                                       boolean isDecision, Button backButton, boolean isDecimal,
+                                                       int countDelete, Fraction[] targetFunction) {
+        matrixContainer.getChildren().clear();
+        matrixArea.setVisible(false);
+
+        simplexMethodList.add(table);
+
+        table = simplexMethodList.getLast();
+        List<String> rowLabels = table.convertToStringList(table.getIsBasic());
+        List<String> columnLabels = table.convertToStringList(table.getIsFree());
+
+        table.printTable();
+
+        if ((!(table.getNegativeVariableIndices() == null || table.getNegativeVariableIndices().isEmpty())
+                && table.getSupportElement(table.getNegativeVariableIndices()) != null
+                && !table.getSupportElement(table.getNegativeVariableIndices()).isEmpty())) {
+            List<int[]> supportElements = table.getSupportElement(table.getNegativeVariableIndices());
+
+            int[] pivotElement = table.getBestSupportElement();
+
+            matrixArea.setVisible(false);
+
+            System.out.println("vox");
+            System.out.println(countDelete);
+
+            if (countDelete > 0) {
+                System.out.println("nebob");
+                countDelete -= 1;
+                drawStyledButtonMatrixForBasisMethod(matrixContainer, rowLabels, columnLabels,
+                        table.getMatrixAsListOfStrings(), supportElements,
+                        pivotElement, table, simplexMethodList,
+                        matrixArea, matrixContainer,
+                        selectedValues, minMaxComboBox,
+                        isDecision, backButton, isDecimal,
+                        countDelete, targetFunction);
+
+                System.out.println(selectedValues);
+            } else {
+
+                String text;
+                if (table.getMatrix().areAllZeroes(table.getMatrix().getRowFromMatrix(table.getMatrix().getRows() - 1))) {
+
+                    if (table.getMatrix().getElement(table.getMatrix().getRows() - 1, table.getMatrix().getCols() - 1).isGreaterThan(Fraction.ZERO)) {
+                        text = "Система несовместна";
+                    } else {
+                        text = "Я ТОЖЕ ИНОГДА ОШИБАЮСЬ";
+                    }
+
+                    matrixArea.setText(text);
+                    matrixArea.setVisible(true);
+                    matrixArea.requestLayout();
+
+                    matrixContainer.getChildren().add(matrixArea);
+                    matrixArea.setManaged(true);
+                } else {
+
+                    table.getMatrix().removeLastRow();
+
+                    System.out.println("qwe");
+                    if (table.isNonDegenerate()) {
+
+                        System.out.println("boby");
+
+                        Fraction[] updateTargetFunction = new Fraction[table.getMatrix().getCols()];
+                        for (int i = 0; i < updateTargetFunction.length; i++) {
+                            updateTargetFunction[i] = Fraction.ZERO;
+                        }
+
+                        for (int i = 0; i < updateTargetFunction.length - 1; i++) {
+                            int freeId = table.getIsFree().get(i);
+
+                            if (freeId < table.getMatrix().getCols() + table.getMatrix().getRows() - 1) {
+                                updateTargetFunction[i] = targetFunction[freeId];
+                            }
+                        }
+                        updateTargetFunction[updateTargetFunction.length - 1] = targetFunction[targetFunction.length - 1]
+                                .divide(Fraction.NEGATIVE_ONE);
+
+                        for (int i = 0; i < table.getMatrix().getRows(); i++) {
+                            Fraction coefficient = targetFunction[table.getIsBasic().get(i)]
+                                    .multiply(Fraction.NEGATIVE_ONE);
+
+                            for (int j = 0; j < table.getMatrix().getCols(); j++) {
+                                updateTargetFunction[j] = updateTargetFunction[j].add(table.getMatrix()
+                                        .getElement(i, j).multiply(coefficient));
+                            }
+                        }
+
+                        table.printTable();
+                        table.getMatrix().addRow(updateTargetFunction);
+                        System.out.println("----");
+                        table.printTable();
+                        System.out.println("----");
+
+                        drawStyledButtonMatrix(matrixContainer, rowLabels, columnLabels,
+                                table.getMatrixAsListOfStrings(), supportElements,
+                                pivotElement, table, simplexMethodList,
+                                matrixArea, matrixContainer,
+                                selectedValues, minMaxComboBox,
+                                isDecision, backButton, isDecimal);
+                    }
+                }
+            }
+
+        } else {
+            SimplexMethod finalTable = table;
+            Platform.runLater(() -> {
+                String answer = determineAnswer(finalTable, minMaxComboBox.getValue(), isDecimal);
+
+                matrixArea.setText(answer);
+                matrixArea.setVisible(true);
+                matrixArea.requestLayout();
+            });
+
+            matrixContainer.getChildren().add(matrixArea);
+            matrixArea.setManaged(true);
+
+        }
+
+    }
+
+    private void drawStyledButtonMatrixForBasisMethod(
+            VBox container,
+            List<String> rowLabels,
+            List<String> columnLabels,
+            List<List<String>> matrix,
+            List<int[]> supportElements,
+            int[] pivotElement,
+            SimplexMethod table,
+            List<SimplexMethod> simplexMethodList,
+            TextArea matrixArea,
+            VBox matrixContainer,
+            List<Boolean> selectedValues,
+            ComboBox<String> minMaxComboBox,
+            boolean isDecision,
+            Button backButton,
+            boolean isDecimal,
+            int countDelete,
+            Fraction[] targetFunction
+    ) {
+        GridPane gridPane = new GridPane();
+        gridPane.setAlignment(Pos.CENTER);
+        gridPane.setHgap(1);
+        gridPane.setVgap(1);
+
+        int rows = rowLabels.size() + 1;
+        int columns = columnLabels.size() + 1;
+
+        for (int j = 0; j < columns; j++) {
+            Label columnHeader = new Label(j == columns - 1 ? "const" : columnLabels.get(j));
+            columnHeader.getStyleClass().add("header-style");
+            columnHeader.setMaxWidth(Double.MAX_VALUE);
+            columnHeader.setAlignment(Pos.CENTER);
+            gridPane.add(columnHeader, j + 1, 0);
+        }
+
+        for (int i = 0; i < rows; i++) {
+            Label rowHeader = new Label(i == rows - 1 ? "f(x)" : rowLabels.get(i));
+            rowHeader.getStyleClass().add("header-style");
+            rowHeader.setMaxWidth(Double.MAX_VALUE);
+            rowHeader.setAlignment(Pos.CENTER);
+            gridPane.add(rowHeader, 0, i + 1);
+
+            for (int j = 0; j < columns; j++) {
+                Button button;
+
+                if (isDecimal) {
+                    String newValue = Fraction.decimalFromStringToString(matrix.get(i).get(j));
+                    button = new Button(newValue);
+                } else {
+                    button = new Button(matrix.get(i).get(j));
+                }
+
+                button.setPrefSize(50, 30);
+
+                if (i == rows - 1 && j == columns - 1) {
+                    button.getStyleClass().add("bottom-right-cell");
+                } else if (i == rows - 1 || j == columns - 1) {
+                    button.getStyleClass().add("last-row-column");
+                } else {
+                    button.getStyleClass().add("cell-style");
+                }
+
+                if (isDecision) {
+                    if (table.getNegativeVariableIndices().isEmpty() || table.getNegativeVariableIndices() == null) {
+                        isDecision = false;
+                    }
+                    table.simplexMoveWithDeleteLine(pivotElement[0], pivotElement[1], table.getNegativeVariableIndices());
+                    processAndDisplayMatrixForBasicMethod(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, true, backButton, isDecimal, countDelete, targetFunction);
+                }
+
+                for (int[] element : supportElements) {
+                    if (element[0] == i && element[1] == j) {
+                        button.getStyleClass().add("support-element");
+                        final int rowIndex = i;
+                        final int colIndex = j;
+                        int finalCountDelete = countDelete;
+                        button.setOnAction(event -> {
+                            handleSupportElementClick(rowIndex, colIndex);
+
+                            System.out.println(1212);
+                            if (finalCountDelete >= 0) {
+                                System.out.println(123123123);
+                                table.simplexMoveWithDeleteLine(rowIndex, colIndex, table.getNegativeVariableIndices());
+
+                                if (finalCountDelete == 0){
+                                    System.out.println("bobby");
+
+                                    Fraction[] updateTargetFunction = new Fraction[table.getMatrix().getCols()];
+                                    for (int k = 0; k < updateTargetFunction.length; k++) {
+                                        updateTargetFunction[k] = Fraction.ZERO;
+                                    }
+
+                                    for (int k = 0; k < updateTargetFunction.length - 1; k++) {
+                                        int freeId = table.getIsFree().get(k);
+
+                                        if (freeId < table.getMatrix().getCols() + table.getMatrix().getRows() - 1) {
+                                            updateTargetFunction[k] = targetFunction[freeId];
+                                        }
+                                    }
+                                    updateTargetFunction[updateTargetFunction.length - 1] = targetFunction[targetFunction.length - 1]
+                                            .divide(Fraction.NEGATIVE_ONE);
+
+                                    table.printTable();
+                                    System.out.println(Arrays.toString(targetFunction));
+                                    System.out.println(Arrays.toString(updateTargetFunction));
+                                    System.out.println(table.getIsBasic() + "Базовые переменные");
+                                    System.out.println(table.getIsFree() + "Свободные переменные");
+                                    for (int k = 0; k < table.getMatrix().getRows()-1; k++) {
+                                        Fraction coefficient = targetFunction[table.getIsBasic().get(k)]
+                                                .multiply(Fraction.NEGATIVE_ONE);
+
+                                        for (int n = 0; n < table.getMatrix().getCols(); n++) {
+                                            updateTargetFunction[n] = updateTargetFunction[n].add(table.getMatrix()
+                                                    .getElement(k, n).multiply(coefficient));
+                                        }
+                                    }
+
+                                    System.out.println(Arrays.toString(updateTargetFunction));
+                                    Matrix updateMatrix = table.getMatrix();
+                                    updateMatrix.printMatrix();
+                                    updateMatrix.removeLastRow();
+                                    System.out.println("clown");
+                                    System.out.println("bob");
+                                    updateMatrix.addRow(updateTargetFunction);
+                                    SimplexMethod table1 = new SimplexMethod(updateMatrix, table.getIsBasic(), table.getIsFree());
+                                    List<String> rowLabelsNew = table.convertToStringList(table.getIsBasic());
+                                    List<String> columnLabelsNew = table.convertToStringList(table.getIsFree());
+
+                                    drawStyledButtonMatrix(matrixContainer, rowLabelsNew, columnLabelsNew,
+                                            table1.getMatrixAsListOfStrings(), supportElements,
+                                            pivotElement, table, simplexMethodList,
+                                            matrixArea, matrixContainer,
+                                            selectedValues, minMaxComboBox,
+                                            false, backButton, isDecimal);
+
+                                }
+                            }
+
+                            else {
+                                System.out.println("dadadadadadadadadadada");
+                            }
+                            processAndDisplayMatrixForBasicMethod(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, false, backButton, isDecimal, finalCountDelete, targetFunction);
+
+                        });
+                    }
+                }
+
+                if (pivotElement[0] == i && pivotElement[1] == j) {
+                    button.getStyleClass().add("pivot-element");
+                }
+
+                gridPane.add(button, j + 1, i + 1);
+            }
+        }
+
+        container.getChildren().clear();
+        container.getChildren().add(gridPane);
+    }
+
     /**
      * Удаление элемента из массива.
+     *
      * @param array Массив.
      * @param index Индекс элемента для удаления.
      * @return Новый массив.
@@ -1177,8 +1469,9 @@ public class Control extends Application {
 
     /**
      * Удаление элемента из списка.
+     *
      * @param vector Вектор из целых чисел.
-     * @param index Индекс для удаления.
+     * @param index  Индекс для удаления.
      * @return Изменённый список.
      */
     public List<Integer> removeElement(List<Integer> vector, int index) {
@@ -1191,7 +1484,6 @@ public class Control extends Application {
 
         return updatedVector;
     }
-
 
     public static void main(String[] args) {
         launch();
