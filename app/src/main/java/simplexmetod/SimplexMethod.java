@@ -245,9 +245,9 @@ public class SimplexMethod {
             int columnIndex = colIndex.get(i);
             for (int j = 0; j < matrix.getRows() - 1; j++) {
                 Fraction denominator = matrix.getElement(j, columnIndex);
-                if (!denominator.isEqualTo(Fraction.ZERO)) {
+                if (!denominator.isEqualTo(Fraction.ZERO) && !denominator.isLessThan(Fraction.ZERO)) {
                     Fraction ratio = matrix.getElement(j, matrix.getCols() - 1).divide(denominator);
-                    if (ratio.isLessThan(minValueVector[i]) && ratio.isGreaterThan(Fraction.ZERO)) {
+                    if (ratio.isLessThan(minValueVector[i]) && !ratio.isLessThan(Fraction.ZERO)) {
                         minValueVector[i] = ratio;
                     }
                 }
@@ -295,7 +295,6 @@ public class SimplexMethod {
             int colIndex = element[1]; // Id столбца
             Fraction value = matrix.getElement(rowIndex, colIndex);
             if (value.isLessThan(minValue)) {
-                System.out.println(1);
                 minValue = value;
                 bestElement = element;
             }

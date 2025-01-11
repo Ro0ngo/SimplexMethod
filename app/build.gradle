@@ -4,6 +4,7 @@ plugins {
     id 'org.javamodularity.moduleplugin' version '1.8.12'
     id 'org.openjfx.javafxplugin' version '0.0.13'
     id 'org.beryx.jlink' version '2.25.0'
+    id 'edu.sc.seis.launch4j' version '3.0.6'
 }
 
 group 'simplexmetod'
@@ -55,14 +56,41 @@ test {
     useJUnitPlatform()
 }
 
-jlink {
-    imageZip = project.file("${buildDir}/distributions/app-${javafx.platform.classifier}.zip")
-    options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
-    launcher {
-        name = 'app'
+launch4j {
+    outfile = 'OptimizationsMethod.exe' // Имя .exe файла
+    mainClassName = 'simplexmetod.Control' // Основной класс
+    jarTask = project.tasks.jar // Ссылка на задачу jar
+    bundledJrePath = 'jre'
+    jvmOptions = [
+            '--module-path', 'lib', // Укажите путь к JavaFX SDK
+            '--add-modules', 'javafx.controls,javafx.fxml' // Укажите необходимые модули JavaFX
+    ]
+}
+
+task addJreToDistributable(type: Copy) {
+    from fileTree("../JRE") // Используем fileTree, если JRE — это директория
+    into file("$buildDir/launch4j/jre") // Указываем директорию назначения
+    doLast {
+        println "JRE copied to $buildDir/launch4j"
     }
 }
 
-jlinkZip {
-    group = 'distribution'
+task packageExecutableDistribution(type: Zip) {
+    from "$buildDir/launch4j" // Архивируем содержимое папки launch4j
+    archiveFileName = "distribution.zip" // Имя архива
+    destinationDirectory = file("$buildDir/distributions") // Куда положить архив
+}
+
+// Устанавливаем зависимость
+tasks.createExe.dependsOn addJreToDistributable // Копируем JRE перед созданием .exe
+tasks.createExe.finalizedBy packageExecutableDistribution
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE // Handle duplicate entries
+    manifest {
+        attributes 'Main-Class': 'simplexmetod.Control'
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
 }

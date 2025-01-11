@@ -720,6 +720,19 @@ public class Matrix {
         return true;
     }
 
+    public boolean areAllPositiveExceptLast(Fraction[] fractions) {
+        if (fractions == null || fractions.length == 0) {
+            return false;
+        }
+
+        for (int i = 0; i < fractions.length - 1; i++) {
+            if (fractions[i] == null || !fractions[i].isGreaterThan(Fraction.ZERO)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /**
      * Удаляет последнюю строку из матрицы.
      * Если массив пуст или содержит только одну строку, data станет пустым.
