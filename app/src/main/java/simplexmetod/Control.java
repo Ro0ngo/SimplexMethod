@@ -681,7 +681,6 @@ public class Control extends Application {
             }
 
             Fraction[] newTargetFunction = new Fraction[targetFunction.length];
-            matrixFromFields.printMatrix();
             for (int i = 0; i < newTargetFunction.length; i++) {
                 newTargetFunction[i] = matrixFromFields.getValueFromCol(i).multiply(Fraction.NEGATIVE_ONE);
             }
@@ -830,10 +829,10 @@ public class Control extends Application {
 
                     solveButton.setOnAction(event -> {
                         backButton.setDisable(true);
-                        tableManager.add(processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, true, backButton, isDecimal, tableManager));
+                        tableManager.add(processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, true, backButton, isDecimal, tableManager, targetFunction));
                     });
 
-                    tableManager.add(processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, false, backButton, isDecimal, tableManager));
+                    tableManager.add(processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, false, backButton, isDecimal, tableManager, targetFunction));
 
                 } else {
                     matrixContainer.getChildren().clear();
@@ -892,10 +891,13 @@ public class Control extends Application {
             boolean isDecision,
             Button backButton,
             boolean isDecimal,
-            SimplexTableManager tableManager
+            SimplexTableManager tableManager,
+            Fraction[] targetFunction
     ) {
 
         tableManager.addTable(table);
+        table = new SimplexMethod(new Matrix(tableManager.copyMatrix(tableManager.getLastTable())),
+                tableManager.getLastTable().getIsBasic(), tableManager.getLastTable().getIsFree());
 
         GridPane gridPane = new GridPane();
         gridPane.setAlignment(Pos.CENTER);
@@ -927,7 +929,6 @@ public class Control extends Application {
                     String newValue = Fraction.decimalFromStringToString(matrix.get(i).get(j));
                     button = new Button(newValue);
                 } else {
-                    System.out.println(i + " " + j);
                     button = new Button(matrix.get(i).get(j));
                 }
 
@@ -947,7 +948,7 @@ public class Control extends Application {
                     }
                     table.simplexMove(pivotElement[0], pivotElement[1], table.getNegativeVariableIndices());
                     tableManager.addTable(table);
-                    tableManager.add(processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, true, backButton, isDecimal, tableManager));
+                    tableManager.add(processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, true, backButton, isDecimal, tableManager, targetFunction));
                 }
 
                 for (int[] element : supportElements) {
@@ -956,12 +957,11 @@ public class Control extends Application {
                         button.getStyleClass().add("support-element");
                         final int rowIndex = i;
                         final int colIndex = j;
+                        SimplexMethod finalTable = table;
                         button.setOnAction(event -> {
-                            handleSupportElementClick(rowIndex, colIndex);
-
-                            table.simplexMove(rowIndex, colIndex, table.getNegativeVariableIndices());
-                            tableManager.addTable(table);
-                            tableManager.add(processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, false, backButton, isDecimal, tableManager));
+                            finalTable.simplexMove(rowIndex, colIndex, finalTable.getNegativeVariableIndices());
+                            tableManager.addTable(finalTable);
+                            tableManager.add(processAndDisplayMatrix(finalTable, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, false, backButton, isDecimal, tableManager, targetFunction));
 
                         });
                     }
@@ -1097,7 +1097,6 @@ public class Control extends Application {
 
         Fraction objectiveValue = table.getMatrix().getElement(table.getMatrix().getRows() - 1, table.getMatrix().getCols() - 1);
 
-        System.out.println(objectiveValue);
         if (taskType.equals("min")) {
             objectiveValue = objectiveValue.multiply(Fraction.NEGATIVE_ONE);
         }
@@ -1133,7 +1132,6 @@ public class Control extends Application {
                                    List<Boolean> selectedValues,
                                    ComboBox<String> minMaxComboBox,
                                    boolean isDecision, Button backButton) {
-        System.out.println("bobby");
         if (table.unlimitedVerification()) {
             if (taskType.equals("min")) {
                 return "Неограничено снизу";
@@ -1145,10 +1143,10 @@ public class Control extends Application {
     }
 
     private SimplexTableManager processAndDisplayMatrix(SimplexMethod table, List<SimplexMethod> simplexMethodList,
-                                                  TextArea matrixArea, VBox matrixContainer, List<Boolean> selectedValues,
-                                                  ComboBox<String> minMaxComboBox,
-                                                  boolean isDecision, Button backButton, boolean isDecimal,
-                                                  SimplexTableManager tableManager) {
+                                                        TextArea matrixArea, VBox matrixContainer, List<Boolean> selectedValues,
+                                                        ComboBox<String> minMaxComboBox,
+                                                        boolean isDecision, Button backButton, boolean isDecimal,
+                                                        SimplexTableManager tableManager, Fraction[] targetFunction) {
         tableManager.addTable(table);
 
         matrixContainer.getChildren().clear();
@@ -1171,7 +1169,7 @@ public class Control extends Application {
                     pivotElement, table, simplexMethodList,
                     matrixArea, matrixContainer,
                     selectedValues, minMaxComboBox,
-                    isDecision, backButton, isDecimal, tableManager));
+                    isDecision, backButton, isDecimal, tableManager, targetFunction));
 
         } else {
             SimplexMethod finalTable = table;
@@ -1192,8 +1190,61 @@ public class Control extends Application {
 
         }
 
+
         backButton.setOnAction(actionEvent -> {
-            tableManager.printAllTables();
+
+            System.out.println("--------");
+            SimplexMethod lastTable = new SimplexMethod(new Matrix(tableManager.copyMatrix(tableManager.getLastTable())),
+                    tableManager.getLastTable().getIsBasic(), tableManager.getLastTable().getIsFree());
+            lastTable.printTable();
+
+            do {
+                tableManager.removeLastTable();
+            } while (lastTable.getMatrix().equals(tableManager.getLastTable().getMatrix()));
+
+            SimplexMethod backTable = new SimplexMethod(new Matrix(tableManager
+                    .copyMatrix(tableManager.getLastTable())), tableManager.getLastTable().getIsBasic(),
+                    tableManager.getLastTable().getIsFree());
+
+            SimplexMethod backTableObj = new SimplexMethod(new Matrix(tableManager.copyMatrix(tableManager.getLastTable())), tableManager.getLastTable().getIsBasic(),
+                    tableManager.getLastTable().getIsFree());
+
+            List<String> backRowLabels = new ArrayList<>(backTableObj.convertToStringList(backTableObj.getIsBasic()));
+            List<String> backColumnLabels = new ArrayList<>(backTableObj.convertToStringList(backTableObj.getIsFree()));
+
+            int[] supElemId = new int[2];
+            for (int i = 0; i < tableManager.getLastTable().getSupportElement(tableManager.getLastTable().getNegativeVariableIndices()).size(); i++) {
+                Matrix copyMatrix = new Matrix(tableManager.copyMatrix(tableManager.getLastTable()));
+                SimplexMethod indexTable = new SimplexMethod(copyMatrix, tableManager.getLastTable().getIsBasic(),
+                        tableManager.getLastTable().getIsFree());
+
+                indexTable.simplexMove(indexTable.getSupportElement(indexTable.getNegativeVariableIndices()).get(i)[0],
+                        indexTable.getSupportElement(indexTable.getNegativeVariableIndices()).get(i)[1],
+                        indexTable.getNegativeVariableIndices());
+
+                if (indexTable.getMatrix().equals(lastTable.getMatrix())) {
+                    supElemId = backTable.getSupportElement(backTable.getNegativeVariableIndices()).get(i);
+                    break;
+                }
+
+            }
+
+            List<String> swapTmp = new ArrayList<>();
+            System.out.println(backColumnLabels);
+            System.out.println(backRowLabels);
+            System.out.println(Arrays.toString(supElemId));
+            swapTmp.add(backRowLabels.get(supElemId[0]));
+            System.out.println(swapTmp.getLast());
+            backRowLabels.set(supElemId[0], backColumnLabels.get(supElemId[1]));
+            backColumnLabels.set(supElemId[1], swapTmp.getLast());
+            System.out.println(backColumnLabels);
+            System.out.println(backRowLabels);
+
+            drawStyledButtonMatrix(matrixContainer, backRowLabels, backColumnLabels,
+                    backTableObj.getMatrixAsListOfStrings(),
+                    backTableObj.getSupportElement(backTableObj.getNegativeVariableIndices()),
+                    backTableObj.getBestSupportElement(), backTableObj, simplexMethodList, matrixArea, matrixContainer,
+                    selectedValues, minMaxComboBox, false, backButton, isDecimal, tableManager, targetFunction);
         });
 
         return tableManager;
@@ -1234,7 +1285,6 @@ public class Control extends Application {
                         isDecision, backButton, isDecimal,
                         countDelete, targetFunction, tableManager);
 
-                System.out.println(selectedValues);
             } else {
 
                 StringBuilder text;
@@ -1258,7 +1308,7 @@ public class Control extends Application {
 
                         SimplexMethod finalTable = table;
                         if (!table.getMatrix().areAllZeroes(table.getMatrix().getRowFromMatrix(table.getMatrix().getRows() - 1))) {
-                            tableManager.add(processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, isDecision, backButton, isDecimal, tableManager));
+                            tableManager.add(processAndDisplayMatrix(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, isDecision, backButton, isDecimal, tableManager, targetFunction));
                         } else {
                             Platform.runLater(() -> {
                                 String answer = determineAnswer(finalTable, minMaxComboBox.getValue(), isDecimal,
@@ -1373,9 +1423,7 @@ public class Control extends Application {
                     if (table.getMatrix().areAllZeroes(table.getMatrix().getRowFromMatrix(table.getMatrix().getRows() - 1))) {
 
                         Fraction[] updateTargetFunction = new Fraction[table.getMatrix().getCols()];
-                        for (int k = 0; k < updateTargetFunction.length; k++) {
-                            updateTargetFunction[k] = Fraction.ZERO;
-                        }
+                        Arrays.fill(updateTargetFunction, Fraction.ZERO);
 
                         for (int k = 0; k < updateTargetFunction.length - 1; k++) {
                             int freeId = table.getIsFree().get(k);
@@ -1415,12 +1463,10 @@ public class Control extends Application {
                                     pivotElement, table, simplexMethodList,
                                     matrixArea, matrixContainer,
                                     selectedValues, minMaxComboBox,
-                                    true, backButton, isDecimal, tableManager));
+                                    true, backButton, isDecimal, tableManager, targetFunction));
 
                         }
-                    }
-
-                    else {
+                    } else {
                         table.simplexMoveWithDeleteLine(pivotElement[0], pivotElement[1], table.getNegativeVariableIndices());
                         tableManager.addTable(table);
                         processAndDisplayMatrixForBasicMethod(table, simplexMethodList, matrixArea, matrixContainer, selectedValues, minMaxComboBox, true, backButton, isDecimal, countDelete, targetFunction, tableManager);
@@ -1436,8 +1482,6 @@ public class Control extends Application {
                         List<int[]> finalSupportElements = supportElements;
                         int[] finalPivotElement = pivotElement;
                         button.setOnAction(event -> {
-                            handleSupportElementClick(rowIndex, colIndex);
-
                             if (finalCountDelete >= 0) {
                                 table.simplexMoveWithDeleteLine(rowIndex, colIndex, table.getNegativeVariableIndices());
 
@@ -1482,7 +1526,7 @@ public class Control extends Application {
                                             finalPivotElement, table, simplexMethodList,
                                             matrixArea, matrixContainer,
                                             selectedValues, minMaxComboBox,
-                                            false, backButton, isDecimal, tableManager));
+                                            false, backButton, isDecimal, tableManager, targetFunction));
 
                                 }
                             } else {
@@ -1493,7 +1537,6 @@ public class Control extends Application {
                         });
                     }
                 }
-
                 if (pivotElement[0] == i && pivotElement[1] == j) {
                     button.getStyleClass().add("pivot-element");
                 }

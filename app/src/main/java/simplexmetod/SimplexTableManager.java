@@ -6,19 +6,19 @@ import java.util.List;
 import java.util.Set;
 
 public class SimplexTableManager {
-
-    private static int idCounter = 0;
-    private int id;
     private Set<SimplexMethod> simplexMethodSet = new HashSet<>();
     private List<SimplexMethod> simplexMethodList = new ArrayList<>();
 
+
     public void addTable(SimplexMethod table) {
-        if (simplexMethodSet.add(table)) {
-            simplexMethodList.add(table);
+
+        Matrix matrix = new Matrix(copyMatrix(table));
+        SimplexMethod updateTable = new SimplexMethod(matrix, table.getIsBasic(), table.getIsFree());
+
+        if (simplexMethodSet.add(updateTable)) {
+            simplexMethodList.add(updateTable);
         }
 
-        System.out.println("Размер множества: " + simplexMethodSet.size());
-        System.out.println("Размер списка: " + simplexMethodList.size());
     }
 
     public Set<SimplexMethod> getTables() {
@@ -58,6 +58,17 @@ public class SimplexTableManager {
             simplexMethodList.addAll(other.getList());
         }
         return this;
+    }
+
+    public Fraction[][] copyMatrix(SimplexMethod table) {
+        Fraction[][] copy = new Fraction[table.getMatrix().getRows()][];
+
+        for (int i = 0; i < table.getMatrix().getRows(); i++) {
+            copy[i] = new Fraction[table.getMatrix().getCols()];
+            System.arraycopy(table.getMatrix().getRowFromMatrix(i), 0, copy[i], 0, table.getMatrix().getCols());
+        }
+
+        return copy;
     }
 
 }

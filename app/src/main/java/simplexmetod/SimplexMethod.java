@@ -119,6 +119,7 @@ public class SimplexMethod {
             throw new IllegalArgumentException("Id столбца " + colIndex + " выходит за пределы допустимого диапазона.");
         }
 
+        System.out.println("id " + rowIndex + " " + colIndex);
         for (int i = 0; i < matrix.getRows() - 1; i++) {
             if (matrix.getElement(i, matrix.getCols() - 1).isLessThan(Fraction.ZERO)) {
                 matrix.setRowInMatrix(i, matrix.multiplyVectorByNumber(matrix.getRowFromMatrix(i), Fraction.NEGATIVE_ONE));
@@ -145,7 +146,11 @@ public class SimplexMethod {
             }
         }
 
+        System.out.println("basis" + this.convertToStringList(this.isBasicVariable));
+        System.out.println("free" + this.convertToStringList(this.isFreeVariable));
         swapVariables(colIndex, rowIndex);
+        System.out.println("basis" + this.convertToStringList(this.isBasicVariable));
+        System.out.println("free" + this.convertToStringList(this.isFreeVariable));
 
         for (int i = 0; i < matrix.getRows(); i++) {
             if (i != rowIndex) {
@@ -177,7 +182,7 @@ public class SimplexMethod {
      * @param freeIndex  Id в векторе свободных переменных.
      * @param basicIndex Id в векторе базисных переменных.
      */
-    private void swapVariables(int freeIndex, int basicIndex) {
+    public void swapVariables(int freeIndex, int basicIndex) {
         if (freeIndex < 0 || freeIndex >= isFreeVariable.size()) {
             throw new IndexOutOfBoundsException("Id для isFreeVariable вне допустимого диапазона: " + freeIndex);
         }
