@@ -1193,10 +1193,8 @@ public class Control extends Application {
 
         backButton.setOnAction(actionEvent -> {
 
-            System.out.println("--------");
             SimplexMethod lastTable = new SimplexMethod(new Matrix(tableManager.copyMatrix(tableManager.getLastTable())),
                     tableManager.getLastTable().getIsBasic(), tableManager.getLastTable().getIsFree());
-            lastTable.printTable();
 
             do {
                 tableManager.removeLastTable();
@@ -1230,15 +1228,9 @@ public class Control extends Application {
             }
 
             List<String> swapTmp = new ArrayList<>();
-            System.out.println(backColumnLabels);
-            System.out.println(backRowLabels);
-            System.out.println(Arrays.toString(supElemId));
             swapTmp.add(backRowLabels.get(supElemId[0]));
-            System.out.println(swapTmp.getLast());
             backRowLabels.set(supElemId[0], backColumnLabels.get(supElemId[1]));
             backColumnLabels.set(supElemId[1], swapTmp.getLast());
-            System.out.println(backColumnLabels);
-            System.out.println(backRowLabels);
 
             drawStyledButtonMatrix(matrixContainer, backRowLabels, backColumnLabels,
                     backTableObj.getMatrixAsListOfStrings(),
